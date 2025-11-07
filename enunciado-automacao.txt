@@ -1,0 +1,141 @@
+Automatização da Configuração e Alojamento de Website em Servidor Linux (IP Público)
+
+Data de Entrega e Defesa: 27 de novembro
+
+Objetivo Geral
+
+Desenvolver um conjunto de scripts de automatização em Bash e Python que permitam instalar, configurar, otimizar e proteger automaticamente um servidor Linux (CentOS 10) destinado ao alojamento de um website acessível externamente através de um IP público fixo.
+
+O projeto visa reduzir a intervenção manual e garantir reprodutibilidade, segurança e eficiência em todo o processo de configuração do servidor.
+
+1. Arquitetura e Planeamento
+Descrição do Ambiente
+Componente	Configuração
+Sistema Operativo	CentOS 10
+Servidor Web	Apache HTTPD
+Linguagem de Script	PHP 
+Base de Dados	MariaDB 
+Acesso Remoto	SSH (porta 22)
+Website	Diretório: /var/www/html
+Firewall	Firewalld configurado
+Segurança	SELinux, Fail2ban, Mod_security
+Rede	IP público fixo configurado
+Certificados SSL/TLS	Let’s Encrypt (opcional extra)
+Ferramentas e Linguagens
+Bash (automatização principal)
+Python (validação e monitorização)
+Apache HTTPD
+PHP 
+MariaDB
+Firewalld
+SELinux
+Fail2ban
+Mod_security
+Let’s Encrypt
+
+2. Scripts de Instalação e Configuração
+Script 1 — Instalação dos Serviços Principais
+Funções automatizadas:
+•	Instalar Apache, PHP e MariaDB.
+•	Ativar e iniciar serviços automaticamente.
+•	Criar ficheiro de teste info.php em /var/www/html.
+•	Verificar acessibilidade do website localmente e via IP público.
+
+Script 2 — Configuração Segura do MariaDB
+Executa automaticamente:
+•	mysql_secure_installation.
+•	Definição de password root e remoção de utilizadores anónimos.
+•	Desativação de login remoto e eliminação de base de dados de teste.
+•	Recarregamento automático de privilégios.
+
+3. Acesso Externo e Rede
+Script 3 — Configuração de Rede e Firewall
+Verifica IP público (curl ifconfig.me).
+Configura IP fixo na interface (/etc/sysconfig/network-scripts).
+Abre apenas as portas 22, 80 e 443 no firewalld.
+Cria regra de redirecionamento no router via script auxiliar.
+Testa conectividade com ping e curl.
+
+4. Scripts de Segurança
+Script 4 — SELinux e Políticas de Segurança
+Confirma que SELinux está ativo em modo enforcing.
+Gera relatórios com sealert -a /var/log/audit/audit.log.
+Cria log centralizado em /var/log/seguranca.log.
+
+Script 5 — Fail2ban
+Instala e configura o Fail2ban para SSH e Apache.
+Define bloqueio após 3 tentativas falhadas.
+Regista IPs bloqueados e envia alerta por email.
+
+Script 6 — Mod_security
+Instala e ativa o módulo no Apache.
+Carrega as regras OWASP CRS.
+Testa proteção contra ataques simulados (SQLi e XSS).
+
+5. Scripts de Otimização (Tuning)
+Script 7 — Tuning do Apache
+Ativa mod_deflate e KeepAlive.
+Configura SSL/TLS automaticamente com Let’s Encrypt.
+Ajusta Timeouts e MaxClients conforme hardware.
+
+Script 8 — Tuning do MariaDB
+Edita automaticamente o ficheiro /etc/my.cnf com:
+innodb_buffer_pool_size = 60% da RAM
+innodb_log_file_size = 256M
+max_connections = 100
+query_cache_size = 32M
+Reinicia o serviço e valida desempenho.
+
+Script 9 — Ajustes PHP
+Aplica configurações no /etc/php.ini:
+•	date.timezone = Europe/Lisbon
+•	upload_max_filesize = 20M
+•	post_max_size = 25M
+•	memory_limit = 256M
+
+6. Scripts de Manutenção e Backup
+Script 10 — Atualizações e Backup
+Atualizações automáticas (dnf update -y).
+Backup diário de:
+/var/www/html
+Bases de dados MariaDB
+Compressão e envio para diretório /backups ou servidor remoto via SCP.
+
+Script 11 — Monitorização
+Gera relatórios de logs (/var/log/httpd/, /var/log/secure).
+Alerta automático por email em caso de falhas de segurança.
+Sincronização horária via NTP.
+
+7. Roadmap de Implementação
+Semana	Etapas Principais	Tarefas Detalhadas
+1ª Semana	Criação e Teste dos Scripts Base	- Instalar e validar Apache, PHP, MariaDB via scripts
+- Configurar rede e firewall automaticamente
+- Criar script de acesso e logs iniciais
+2ª Semana	Segurança, Tuning e Automação Total	- Executar scripts de segurança (SELinux, Fail2ban, Mod_security)
+- Aplicar scripts de tuning e otimização
+- Automatizar backups e notificações
+- Documentar resultados e testar acesso externo
+8. Resultados Esperados
+•	Servidor configurado automaticamente e funcional.
+•	Website acessível via IP público (HTTP/HTTPS).
+•	Scripts executáveis para instalação, segurança e tuning.
+•	Base de dados e servidor protegidos.
+•	Logs centralizados e alertas automáticos ativos.
+•	Configuração totalmente reprodutível em novos sistemas.
+
+9. Documentação Final
+Deve incluir:
+•	Todos os scripts desenvolvidos (.sh e .py).
+•	Relatório técnico com:
+•	Etapas de execução e logs.
+•	Resultados de testes.
+•	Validação do acesso externo.
+•	Capturas de ecrã de:
+•	Execução dos scripts
+•	Acesso externo ao website
+•	Logs de segurança e bloqueios
+•	Certificado SSL ativo
+•	Checklist de segurança e tuning aplicada.
+Envio:
+📧 dario.quental.000606@edu.atec.pt
+Apresentação e defesa: 27 de novembro
