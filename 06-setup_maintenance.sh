@@ -12,6 +12,16 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Iniciando a configuração das rotinas de manutenção...${NC}"
 
+# --- 1. Sincronização Horária (NTP) ---
+echo -e "\n${GREEN}--> Configurando a sincronização horária com chrony (NTP)...${NC}"
+sudo dnf install -y chrony
+sudo systemctl enable --now chronyd
+
+echo -e "Aguardando a sincronização inicial do relógio..."
+sleep 5 # Pequena pausa para o chrony iniciar
+chronyc sources
+echo -e "${GREEN}--> Serviço NTP (chrony) configurado e ativo.${NC}"
+
 # --- 1. Configuração de Backups Diários ---
 echo -e "\n${GREEN}--> Configurando backups diários...${NC}"
 BACKUP_DIR="/backup/lamp"
@@ -23,6 +33,12 @@ sudo chmod 700 $BACKUP_DIR
 
 sudo bash -c "cat > $BACKUP_SCRIPT_PATH" <<'EOL'
 #!/bin/bash
+
+# --- CONFIGURAÇÃO DO BACKUP REMOTO (OPCIONAL) ---
+# Deixe em branco para desativar o envio remoto
+REMOTE_USER="user"
+REMOTE_HOST="ip_do_servidor_remoto"
+REMOTE_DIR="/path/to/remote/backups"
 
 BACKUP_DIR="/backup/lamp"
 DATE=$(date +%Y-%m-%d)
@@ -36,6 +52,13 @@ tar -czf "${BACKUP_DIR}/www_backup_${DATE}.tar.gz" /var/www/html
 # Limpeza de Backups Antigos (mantém 7 dias)
 find $BACKUP_DIR -type f -mtime +7 -name '*.gz' -delete
 
+# Envio para servidor remoto (se configurado)
+if [ -n "$REMOTE_USER" ] && [ -n "$REMOTE_HOST" ] && [ -n "$REMOTE_DIR" ]; then
+    echo "Enviando backups para o servidor remoto..."
+    scp "${BACKUP_DIR}/db_backup_${DATE}.sql.gz" "${BACKUP_DIR}/www_backup_${DATE}.tar.gz" ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}
+    echo "Envio concluído."
+fi
+
 echo "Backup LAMP concluído em ${DATE}."
 EOL
 
@@ -43,7 +66,14 @@ sudo chmod +x $BACKUP_SCRIPT_PATH
 
 (sudo crontab -l 2>/dev/null; echo "0 2 * * * ${BACKUP_SCRIPT_PATH}") | sudo crontab -
 
-echo -e "${GREEN}--> Script de backup criado e agendado com sucesso!${NC}"
+echo -e "${GREEN}--> Script de backup criado em ${BACKUP_SCRIPT_PATH} e agendado com sucesso!${NC}"
+echo -e "\n${YELLOW}--- AÇÃO NECESSÁRIA: CONFIGURAR BACKUP REMOTO (SCP) ---${NC}"
+echo -e "Para ativar o envio automático dos backups para um servidor remoto:"
+echo -e "1. Edite o script de backup: ${YELLOW}sudo nano ${BACKUP_SCRIPT_PATH}${NC}"
+echo -e "2. Preencha as variáveis ${YELLOW}REMOTE_USER${NC}, ${YELLOW}REMOTE_HOST${NC} e ${YELLOW}REMOTE_DIR${NC} com os dados do seu servidor de backup."
+echo -e "3. Configure a autenticação por chave SSH para que o backup automático não peça password:"
+echo -e "   a. No servidor LAMP (este), gere uma chave SSH para o utilizador root: ${GREEN}sudo ssh-keygen -t rsa -b 4096${NC}"
+echo -e "   b. Copie a chave pública para o servidor de backup: ${GREEN}sudo ssh-copy-id -i /root/.ssh/id_rsa.pub user@ip_do_servidor_remoto${NC}"
 echo -e "${YELLOW}AVISO: Crie o ficheiro /root/.my.cnf com as credenciais do MariaDB para o backup da base de dados funcionar automaticamente.${NC}"
 
 # --- 2. Configuração de Atualizações Automáticas ---

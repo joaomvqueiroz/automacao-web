@@ -49,6 +49,14 @@ echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php > /dev/null
 
 sudo systemctl restart httpd
 
+echo -e "\n${YELLOW}--> Testando o acesso local ao servidor web...${NC}"
+if curl -s --head http://localhost/info.php | grep "200 OK" > /dev/null; then
+    echo -e "${GREEN}--> Teste de acesso local bem-sucedido (HTTP 200 OK).${NC}"
+else
+    echo -e "\033[0;31m--> ERRO: O servidor web não está a responder corretamente.${NC}"
+fi
+
+
 echo -e "\n${GREEN}=====================================================${NC}"
 echo -e "${GREEN}Instalação da stack LAMP concluída com sucesso!${NC}"
 echo -e "Verifique o funcionamento acedendo a: http://<IP_DO_SERVIDOR>/info.php"
