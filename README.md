@@ -12,18 +12,17 @@ A automação é dividida em scripts principais, cada um com uma responsabilidad
 
 1.  **`01-install_services.sh`**: Instala a stack LAMP (Apache, MariaDB, PHP) e os repositórios (EPEL, Remi).
 2.  **`02-secure_mariadb.sh`**: Automatiza a configuração de segurança do MariaDB, definindo uma password root e removendo padrões inseguros.
-3.  **`03a-configure_static_ip.sh`**: Configura um endereço IP estático na interface de rede usando `nmcli`.
-4.  **`03-configure_network.sh`**: Configura o `firewalld` para permitir apenas tráfego SSH, HTTP e HTTPS.
-5.  **`04-setup_security.sh`**: Instala e configura ferramentas de segurança essenciais:
+3.  **`03-configure_network.sh`**: Configura um endereço IP estático na interface de rede e ajusta o `firewalld` para permitir apenas tráfego SSH, HTTP e HTTPS.
+4.  **`04-setup_security.sh`**: Instala e configura ferramentas de segurança essenciais:
     *   `Fail2ban`: Para proteger SSH e Apache contra ataques de força bruta.
     *   `ModSecurity`: Atua como um Web Application Firewall (WAF) com as regras OWASP CRS.
-6.  **`05-tune_performance.sh`**: Aplica otimizações de desempenho (tuning) nos ficheiros de configuração do Apache, MariaDB e PHP.
-7.  **`06-setup_maintenance.sh`**: Configura rotinas de manutenção, incluindo:
+5.  **`05-tune_performance.sh`**: Aplica otimizações de desempenho (tuning) nos ficheiros de configuração do Apache, MariaDB e PHP.
+6.  **`06-setup_maintenance.sh`**: Configura rotinas de manutenção, incluindo:
     *   Backups diários automatizados (ficheiros e base de dados).
     *   Sincronização horária com NTP (`chrony`).
     *   Atualizações automáticas de segurança (`dnf-automatic`).
     *   Geração de relatórios de segurança.
-8.  **`12-setup_ssl_certificate.sh`**: Automatiza a obtenção e instalação de um certificado SSL/TLS gratuito da Let's Encrypt usando o `Certbot`.
+7.  **`12-setup_ssl_certificate.sh`**: Automatiza a obtenção e instalação de um certificado SSL/TLS gratuito da Let's Encrypt usando o `Certbot`.
 
 #### Scripts Auxiliares
 

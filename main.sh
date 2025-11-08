@@ -65,30 +65,25 @@ run_script "01-install_services.sh"
 run_script "02-secure_mariadb.sh"
 
 # 4. Configuração de Rede
-run_script "03a-configure_static_ip.sh"
 run_script "03-configure_network.sh"
 
 # 5. Segurança do Servidor (WAF, IPS)
-# Atualiza o email no script do Fail2ban antes de o executar
-sed -i "s/DEST_EMAIL=.*/DEST_EMAIL=\"${ADMIN_EMAIL}\"/" 04-setup_security.sh
-run_script "04-setup_security.sh"
+run_script "04-selinux_policies.sh"
+run_script "05-install_fail2ban.sh" "$ADMIN_EMAIL"
+run_script "06-install_modsecurity.sh"
 
 # 6. Otimização de Desempenho
-run_script "05-tune_performance.sh"
+run_script "07-tune_apache.sh"
+run_script "08-tune_mariadb.sh"
+run_script "09-tune_php.sh"
 
 # 7. Manutenção e Continuidade
-run_script "06-setup_maintenance.sh"
+run_script "10-updates_backup.sh"
+run_script "11-monitoring.sh" "$ADMIN_EMAIL"
 
 # 8. Configuração do Certificado SSL
 run_script "12-setup_ssl_certificate.sh" "$DOMAIN_NAME" "$ADMIN_EMAIL"
-
-# 9. Configuração do Relatório de Monitorização Diário
-echo -e "\n${BLUE}=====================================================${NC}"
-echo -e "${BLUE}==> CONFIGURANDO RELATÓRIO DE MONITORIZAÇÃO DIÁRIO ==${NC}"
-echo -e "${BLUE}=====================================================${NC}"
-(sudo crontab -l 2>/dev/null; echo "0 7 * * * ${PWD}/run_monitor.sh ${ADMIN_EMAIL}") | sudo crontab -
-echo -e "${GREEN}--> Relatório diário agendado para as 07:00, a ser enviado para ${ADMIN_EMAIL}.${NC}"
-
+ 
 # 10. Validação Final do Ambiente com Python
 echo -e "\n${BLUE}=====================================================${NC}"
 echo -e "${BLUE}==> EXECUTANDO SCRIPT DE VALIDAÇÃO FINAL (Python) ==${NC}"
