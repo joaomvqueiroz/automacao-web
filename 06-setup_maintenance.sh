@@ -73,7 +73,7 @@ echo -e "1. Edite o script de backup: ${YELLOW}sudo nano ${BACKUP_SCRIPT_PATH}${
 echo -e "2. Preencha as variáveis ${YELLOW}REMOTE_USER${NC}, ${YELLOW}REMOTE_HOST${NC} e ${YELLOW}REMOTE_DIR${NC} com os dados do seu servidor de backup."
 echo -e "3. Configure a autenticação por chave SSH para que o backup automático não peça password:"
 echo -e "   a. No servidor LAMP (este), gere uma chave SSH para o utilizador root: ${GREEN}sudo ssh-keygen -t rsa -b 4096${NC}"
-echo -e "   b. Copie a chave pública para o servidor de backup: ${GREEN}sudo ssh-copy-id -i /root/.ssh/id_rsa.pub user@ip_do_servidor_remoto${NC}"
+echo -e "   b. Copie a chave pública para o servidor de backup: ${GREEN}sudo ssh-copy-id -i /root/.ssh/id_rsa.pub ${REMOTE_USER}@${REMOTE_HOST}${NC}"
 echo -e "${YELLOW}AVISO: Crie o ficheiro /root/.my.cnf com as credenciais do MariaDB para o backup da base de dados funcionar automaticamente.${NC}"
 
 # --- 2. Configuração de Atualizações Automáticas ---
@@ -81,15 +81,28 @@ echo -e "\n${GREEN}--> Configurando atualizações automáticas de segurança (d
 sudo dnf install -y dnf-automatic
 
 sudo sed -i 's/^apply_updates = .*/apply_updates = yes/' /etc/dnf/automatic.conf
+sudo sed -i 's/^upgrade_type = .*/upgrade_type = security/' /etc/dnf/automatic.conf
 
 sudo systemctl enable --now dnf-automatic.timer
 
 echo -e "${GREEN}--> Atualizações automáticas configuradas e ativadas.${NC}"
 
-# --- 3. Configuração da Rotação de Logs do Apache ---
-echo -e "\n${GREEN}--> Configurando a rotação de logs para o Apache...${NC}"
-LOGROTATE_CONFIG="/var/log/httpd/*.log {\n    daily\n    rotate 7\n    compress\n    missingok\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"
-echo -e "$LOGROTATE_CONFIG" | sudo tee /etc/logrotate.d/httpd-custom > /dev/null
+# --- 3. Geração de Relatórios de Segurança e Log Centralizado ---
+echo -e "\n${GREEN}--> Gerando relatórios e criando log de segurança centralizado...${NC}"
+sudo dnf install -y setools-console # Garante que o 'sealert' está instalado
+LOG_SEGURANCA="/var/log/seguranca.log"
+
+echo -e "Relatório de Segurança Inicial - $(date)\n" | sudo tee $LOG_SEGURANCA
+echo -e "\n--- STATUS FAIL2BAN ---\n" | sudo tee -a $LOG_SEGURANCA
+sudo fail2ban-client status sshd | sudo tee -a $LOG_SEGURANCA
+echo -e "\n--- ALERTAS SELINUX ---\n" | sudo tee -a $LOG_SEGURANCA
+sudo sealert -a /var/log/audit/audit.log | sudo tee -a $LOG_SEGURANCA
+echo -e "${GREEN}--> Relatório de segurança inicial guardado em ${LOG_SEGURANCA}${NC}"
+
+# --- 4. Configuração da Rotação de Logs do Apache ---
+echo -e "\n${GREEN}--> Configurando a rotação de logs para o Apache (logrotate)...${NC}"
+LOGROTATE_APACHE_CONFIG="/var/log/httpd/*.log {\n    daily\n    rotate 7\n    compress\n    missingok\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"
+echo -e "$LOGROTATE_APACHE_CONFIG" | sudo tee /etc/logrotate.d/httpd > /dev/null
 
 echo -e "${GREEN}--> Rotação de logs do Apache configurada.${NC}"
 

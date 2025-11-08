@@ -28,6 +28,8 @@ sudo sed -i "s/^action = .*/action = %(action_mw)s/" /etc/fail2ban/jail.local
 
 # Ativar a proteção para SSH com as novas configurações
 sudo sed -i '/^\[sshd\]/a enabled = true\nmaxretry = 3\nbantime = 3600' /etc/fail2ban/jail.local
+# Ativar a proteção para o Apache (tentativas de autenticação falhadas)
+sudo sed -i '/^\[apache-auth\]/a enabled = true\nmaxretry = 3\nbantime = 3600' /etc/fail2ban/jail.local
 
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
@@ -85,5 +87,6 @@ echo -e "${GREEN}--> Relatório de segurança inicial guardado em ${LOG_SEGURANC
 echo -e "\n${GREEN}=====================================================${NC}"
 echo -e "${GREEN}Ferramentas de segurança instaladas e configuradas!${NC}"
 echo -e "Fail2ban está a monitorizar o SSH."
+echo -e "Fail2ban está a monitorizar o Apache (auth)."
 echo -e "ModSecurity (WAF) está a proteger o Apache."
 echo -e "${GREEN}=====================================================${NC}"

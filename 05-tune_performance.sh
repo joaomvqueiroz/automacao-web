@@ -52,7 +52,18 @@ sudo cp $HTTPD_CONFIG_FILE ${HTTPD_CONFIG_FILE}.bak
 sudo sed -i 's/^KeepAlive Off/KeepAlive On/' $HTTPD_CONFIG_FILE
 sudo sed -i 's/^KeepAliveTimeout .*/KeepAliveTimeout 5/' $HTTPD_CONFIG_FILE
 
-echo -e "${GREEN}--> Configurações do Apache aplicadas com sucesso.${NC}"
+echo -e "${GREEN}--> Ativando compressão com mod_deflate...${NC}"
+DEFLATE_CONF_FILE="/etc/httpd/conf.d/deflate.conf"
+sudo bash -c "cat > $DEFLATE_CONF_FILE" <<'EOL'
+<IfModule mod_deflate.c>
+    # Tipos de ficheiro a comprimir
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript
+    # Evita que o mod_deflate seja aplicado a ficheiros ja comprimidos (imagens)
+    SetOutputFilter DEFLATE
+</IfModule>
+EOL
+
+echo -e "${GREEN}--> Configurações do Apache (KeepAlive e Deflate) aplicadas com sucesso.${NC}"
 
 # --- 4. Reiniciar serviços para aplicar as alterações ---
 echo -e "\n${YELLOW}--> Reiniciando serviços para aplicar as novas configurações...${NC}"
