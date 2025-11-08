@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Conteúdo
 Capítulo 1 – Introdução e Planeamento	4
 1.1 Objetivo Geral do Projeto	4
@@ -706,3 +707,713 @@ A infraestrutura cumpre todos os requisitos do projeto, destacando-se:
 •	Acesso Seguro: O site opera em produção simulada com um Certificado Let's Encrypt válido.
 Lições Aprendidas
 O projeto reforçou a importância de testar cada componente de segurança em isolamento e destacou que a performance ideal depende do dimensionamento correto dos recursos de software (MPM, Buffer Pool) para a hardware disponível, o que foi o foco principal do tuning do servidor.
+=======
+Conteúdo
+Capítulo 1 – Introdução e Planeamento	4
+1.1 Objetivo Geral do Projeto	4
+1.2 Arquitetura do Ambiente e Tecnologias Selecionadas	4
+1.3 Planeamento e Roadmap de Implementação	5
+1.4 Estrutura da Documentação Técnica	5
+1.5 Considerações sobre o Cenário de Simulação	5
+Capítulo 2 – Configuração do GitHub	6
+2.1 Instalação e Configuração Inicial de Ferramentas	6
+2.2 Configuração do Projeto Local e Repositório	6
+2.3 Publicação e Autenticação no GitHub	7
+2.4 Fluxo de Trabalho em Máquina Virtual (Terminal)	7
+2.5 Colaboração e Atualizações	7
+Capítulo 3 – Implementação de Serviços Principais (LAMP Stack)	8
+3.1 Instalação e Configuração Base do CentOS Stream 9	8
+3.2 Configuração da Interface de Rede e IP Público Simulado	8
+3.3 Instalação e Verificação do Servidor Apache (HTTPD)	9
+3.4 Instalação e Configuração do PHP (Versão 8.2)	9
+3.5 Instalação e Configuração Segura do MariaDB	10
+3.6 Criação da Base de Dados e Tabela de Reservas	10
+3.7 Testes de Conectividade e Operacionalidade	11
+Capítulo 4 – Conectividade e Acesso Seguro (IP Público e SSL)	11
+Capítulo 4.1 — Configurar o serviço DuckDNS	11
+4.2. Configuração do Apache para Acesso Cifrado (HTTPS)	13
+Capítulo 5 – Segurança do Servidor (Hardening)	15
+5.1 Objetivo	15
+5.2 Atualização e Patches do Sistema	15
+5.3 Gestão de Utilizadores e Permissões	15
+5.4 Configuração de Firewall (firewalld)	16
+5.5 Proteção Contra Ataques – Fail2ban	16
+5.6 Auditoria e Monitorização	17
+5.10 Implementação do Web Application Firewall (ModSecurity)	17
+5.11 Ajustes Adicionais de Segurança (SELinux e Firewalld)	18
+5.12 Autenticação Básica no Painel Administrativo	18
+5.13 Conclusão	18
+Capítulo 6 – Otimização de Desempenho (Tuning)	19
+6.1. Tuning do PHP (php.ini)	19
+6.2. Tuning do MariaDB (my.cnf)	19
+6.3. Tuning do Apache (HTTPD)	20
+6.4. Conclusão	21
+Capítulo 7 – Manutenção e Continuidade de Serviço	21
+7.1 Objetivo	21
+7.2 Configuração de Backups Diários	21
+7.3 Sincronização Horária via NTP (chronyd)	21
+7.4 Configuração de Atualizações Automáticas	22
+7.5 Monitorização de Logs e Rotação Automática	22
+7.6 Validação de Continuidade de Serviço	23
+7.7 Boas Práticas de Manutenção	23
+7.8 Conclusão	23
+Capítulo 8 – Validação, Resultados e Documentação Final	24
+8.1. Objetivo	24
+8.2. Testes Funcionais, de Desempenho e Anexos (Configurações e Logs)	24
+8.2. Validação dos Resultados Esperados	29
+8.3. Conclusão e Lições Aprendidas	29
+
+ 
+Capítulo 1 – Introdução e Planeamento
+1.1 Objetivo Geral do Projeto
+O presente projeto técnico teve como objetivo instalar, configurar, otimizar e validar um servidor Linux baseado na distribuição CentOS Stream 9, destinado ao alojamento de um website dinâmico com acesso externo simulado.
+O principal propósito consistiu em criar um ambiente de alojamento profissional e seguro utilizando a stack LAMP (Linux, Apache, MariaDB e PHP), cumprindo os seguintes pilares fundamentais:
+•	Segurança Robusta: Aplicação de medidas de hardening em múltiplas camadas (FirewallD, SELinux, Fail2ban e ModSecurity).
+•	Desempenho Otimizado: Implementação de tuning específico para Apache (MPM), PHP e MariaDB.
+•	Continuidade de Serviço: Configuração de backups automáticos e rotinas de manutenção agendadas.
+1.2 Arquitetura do Ambiente e Tecnologias Selecionadas
+A arquitetura do projeto baseou-se no modelo LAMP, amplamente utilizado em ambientes empresariais pela sua estabilidade, compatibilidade e facilidade de integração.
+Componente	Tecnologia / Versão	Justificação Técnica
+Sistema Operativo (L)	CentOS Stream 9	Distribuição Linux de nível empresarial (derivada do RHEL), reconhecida pela estabilidade, longo ciclo de suporte e mecanismos de segurança avançados (SELinux).
+Servidor Web (A)	Apache HTTPD 2.4+	Servidor maduro, altamente configurável e amplamente compatível com módulos de segurança, como o ModSecurity.
+Base de Dados (M)	MariaDB 10+	Fork do MySQL, com melhorias significativas em desempenho e segurança sob carga elevada.
+Linguagem (P)	PHP 8+	Responsável pelo processamento dinâmico do website, oferecendo melhor desempenho e suporte moderno.
+Segurança	Fail2ban / ModSecurity	Ferramentas complementares que asseguram proteção contra ataques de força bruta e vulnerabilidades de aplicações web.
+
+1.3 Planeamento e Roadmap de Implementação
+O projeto foi desenvolvido em duas fases principais, distribuídas ao longo de um período simulado de duas semanas, de forma a refletir o ciclo completo de planeamento, implementação e otimização.
+Semana	Etapas Principais	Foco e Objetivos
+1ª Semana	Planeamento e Instalação da Base	Instalação da stack LAMP, configuração do IP estático e ativação inicial do FirewallD.
+2ª Semana	Segurança, Tuning e Validação	Aplicação do hardening (Fail2ban, ModSecurity, SSL/TLS), ajustes de desempenho e criação de rotinas de backup e manutenção.
+1.4 Estrutura da Documentação Técnica
+Toda a documentação e configuração foram organizadas nos diretórios padrão do CentOS, seguindo as boas práticas de administração de sistemas, facilitando futuras manutenções e auditorias.
+Diretório / Ficheiro	Função
+/var/www/html/	Diretório raiz do website (DocumentRoot do Apache).
+/etc/httpd/	Diretório principal de configuração do Apache (inclui httpd.conf e ficheiros de módulos).
+/etc/php.ini	Ficheiro global de configuração do PHP, ajustado para otimização de desempenho.
+/etc/my.cnf.d/	Diretório de configuração do MariaDB, onde foram aplicados os parâmetros de tuning.
+/etc/fail2ban/	Diretório que contém as regras e filtros do sistema de prevenção de intrusões.
+1.5 Considerações sobre o Cenário de Simulação
+O projeto foi desenvolvido num ambiente virtualizado (VMware ou VirtualBox), reproduzindo as condições operacionais de um servidor de produção com acesso remoto e políticas de segurança ativas.
+1.	Acesso Remoto: Todas as operações de administração foram realizadas via SSH (porta 22), simulando a gestão remota de um servidor em datacenter.
+2.	IP Público Simulado: O servidor utilizou o endereço 192.168.1.100 como IP estático, acessível externamente a partir de um cliente na mesma rede.
+3.	Ambiente Controlado: O sistema manteve o SELinux em modo Enforcing e o FirewallD ativo desde a fase inicial de instalação.
+4.	Recursos Limitados: As otimizações descritas (ver Capítulo 5) foram aplicadas a uma máquina com 2 GB de RAM e 2 vCPUs, demonstrando a eficiência das técnicas de tuning mesmo em ambientes de baixo custo.
+Capítulo 2 – Configuração do GitHub
+2.1 Instalação e Configuração Inicial de Ferramentas
+Para garantir um ambiente de desenvolvimento integrado, funcional e compatível com o servidor LAMP, foram instaladas as seguintes ferramentas de suporte ao ciclo de desenvolvimento e controlo de versões:
+Git
+Linux (CentOS / Red Hat): 
+sudo dnf install git-all -y
+•	Windows: instalação do Git for Windows através do site oficial.
+Visual Studio Code (VS Code)
+•	Instaladar a extensão Live Server para pré-visualização local de páginas web.
+Node.js
+•	Instalação a partir do site oficial: https://nodejs.org/pt-br/
+Mountebank
+•	Instalação global via npm:
+npm install -g mountebank
+•	Aceder a http://localhost:2525 para confirmar o funcionamento local.
+Configuração de Execução no PowerShell (Windows)
+Para permitir a execução de scripts locais, foi necessário definir a política:
+Set-ExecutionPolicy RemoteSigned
+Estas ferramentas garantem a integração entre o desenvolvimento local, a simulação virtual e o controlo de versões remoto através do GitHub.
+2.2 Configuração do Projeto Local e Repositório
+Com o ambiente configurado, o projeto foi preparado para controlo de versões com o Git.
+Criar a pasta principal:
+C:\DEV\
+•	Abrir o projeto no VS Code.
+•	Testar o ficheiro principal index.html com a extensão Live Server.
+•	Inicializar o repositório Git:
+•	No menu Controle de Código-Fonte do VS Code → Inicializar Repositório Git.
+2.3 Publicação e Autenticação no GitHub
+Com o projeto local configurado, procedeu-se à publicação no GitHub para garantir rastreabilidade, backup remoto e colaboração entre utilizadores.
+1.	Autenticação no VS Code:
+Fazer login na conta GitHub através do ícone de perfil → Sign in to GitHub.
+2.	Publicar o repositório:
+Clicar em Publicar Branch para enviar o projeto ao GitHub.
+3.	Criação do Personal Access Token (PAT):
+o	No GitHub, aceder a:
+Settings → Developer settings → Personal access tokens → Tokens (classic)
+o	Selecionar Generate new token (classic) e ativar o scope repo.
+o	Copiar o token gerado (utilizado no lugar da palavra-passe em operações remotas).
+2.4 Fluxo de Trabalho em Máquina Virtual (Terminal)
+Para simular o ambiente de desenvolvimento remoto, o projeto foi clonado e manipulado numa máquina virtual CentOS.
+Procedimentos:
+# Criar diretório de trabalho
+mkdir Proj && cd Proj
+
+# Clonar o repositório remoto
+git clone https://github.com/joaomvqueiroz/html.git
+
+# Aceder ao diretório do projeto
+cd DEMOHTML
+
+# Editar ficheiros e sincronizar alterações
+git add .
+git commit -m "Atualização do README"
+git push -u origin main
+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
+
+Durante o push, o sistema solicita o username GitHub e o PAT no campo de password, simulando o processo real de publicação remota.
+2.5 Colaboração e Atualizações
+Para manter o repositório sincronizado e permitir trabalho colaborativo, foram definidos os seguintes procedimentos:
+•	Atualização do repositório local:
+git pull origin main
+Este comando sincroniza a cópia local com as últimas alterações do repositório remoto.
+•	Gestão de Colaboradores:
+No GitHub, aceder a:
+Settings → Collaborators
+Capítulo 3 – Implementação de Serviços Principais (LAMP Stack)
+Este capítulo descreve a instalação e configuração inicial dos principais componentes da stack LAMP — Linux, Apache, MariaDB e PHP — preparando o servidor CentOS Stream 9 para alojar o website dinâmico do projeto.
+3.1 Instalação e Configuração Base do CentOS Stream 9
+A máquina virtual foi criada no VMware Workstation, utilizando o CentOS Stream 9 como sistema operativo base. Após a instalação, foram aplicadas atualizações e repositórios adicionais (EPEL) para garantir estabilidade e compatibilidade.
+Ação	Comando
+Atualização inicial	sudo dnf update -y
+Instalação do repositório EPEL	sudo dnf install epel-release -y
+Verificação da versão do sistema	cat /etc/os-release
+3.2 Configuração da Interface de Rede e IP Público Simulado
+Para permitir o acesso estável ao servidor, a interface de rede (ex: ens33) foi configurada com um endereço IP estático (192.168.1.100) no modo Bridge, simulando um IP público.
+Configuração do ficheiro /etc/sysconfig/network-scripts/ifcfg-ens33:
+Parâmetro	Valor Aplicado
+BOOTPROTO	static
+IPADDR	192.168.1.10
+NETMASK	255.255.255.0
+GATEWAY	192.168.1.254
+DNS1	8.8.8.8
+Comandos de aplicação: nmtui
+
+
+
+
+3.3 Instalação e Verificação do Servidor Apache (HTTPD)
+O Apache HTTP Server foi instalado e configurado para aceitar ligações HTTP na porta 80, tornando-se o principal componente de alojamento web do sistema.
+Instalação e ativação:
+Ação	Comando
+Instalar o Apache	sudo dnf install httpd -y
+Ativar e iniciar o serviço	sudo systemctl enable httpd
+ sudo systemctl start httpd
+Verificar o estado do serviço	sudo systemctl status httpd
+
+Configuração da firewall (FirewallD):
+Ação	Comando
+Abrir portas HTTP(80)/HTTPS(443)	sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+Aplicar alterações	sudo firewall-cmd --reload
+
+Validação:
+Acedendo ao endereço http://192.168.1.100 no browser, foi exibida a página padrão do Apache, confirmando o funcionamento correto do serviço.
+3.4 Instalação e Configuração do PHP (Versão 8.2)
+Para permitir a execução de páginas dinâmicas, foi instalada a versão PHP 8.2, juntamente com os módulos essenciais para integração com o Apache e o MariaDB.
+Instalação dos módulos:
+Ação	Comando
+Reiniciar e ativar o módulo PHP 8.2	sudo dnf module reset php -y
+ sudo dnf module enable php:8.3.7 -y
+Instalar PHP e módulos complement	sudo dnf install php-cli php-mysqlnd php-gd php-xml php-json php-mbstring -y
+	sudo dnf install https://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
+ Instalação e Confirmação	sudo dnf install php php-cli php-fpm php-mysqlnd -y
+
+Validação do PHP:
+Ação	Comando
+Verificar versão instalada	php -v
+Criar ficheiro de teste (info.php)	echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+Reiniciar o Apache	sudo systemctl restart httpd
+Validação via browser: Acedendo a http://192.168.1.100/info.php, foi apresentada a página de informações do PHP, confirmando a integração com o Apache.
+3.5 Instalação e Configuração Segura do MariaDB
+O MariaDB Server foi instalado para gerir a base de dados relacional da aplicação. De seguida, foi executado o assistente de segurança para endurecer o acesso ao serviço.
+Instalação e ativação:
+Ação	Comando
+Instalar MariaDB	sudo dnf install mariadb-server -y
+Ativar e iniciar o serviço	sudo systemctl enable mariadb
+sudo systemctl start mariadb
+Configuração de segurança inicial:
+sudo mysql_secure_installation
+Durante o processo, foram aplicadas as seguintes medidas:
+•	Definição de password para o utilizador root;
+•	Remoção de utilizadores anónimos;
+•	Eliminação da base de dados de teste;
+•	Bloqueio de acesso remoto à conta root.
+3.6 Criação da Base de Dados e Tabela de Reservas
+Foi criada a base de dados sabor_do_mar, o utilizador web_user, e a tabela reservas, responsável por armazenar os dados submetidos através do formulário web.
+Comando SQL Executado:
+USE sabor_do_mar;
+CREATE TABLE reservas (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    telefone VARCHAR(20),
+    data DATE NOT NULL,
+    hora TIME NOT NULL,
+    pessoas INT(11) NOT NULL,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP	);
+Coluna	Tipo de Dados	Descrição
+id	INT (PK, Auto-Increment)	Identificador único de cada reserva.
+nome, email, telefone	VARCHAR	Dados de contacto do cliente.
+data, hora	DATE, TIME	Data e hora da reserva efetuada.
+pessoas	INT	Número de pessoas por reserva.
+data_criacao	TIMESTAMP	Registo automático da data/hora de inserção.
+
+3.7 Testes de Conectividade e Operacionalidade
+Para validar a comunicação entre os componentes da stack LAMP, foi criado o ficheiro de teste /var/www/html/dbtest.php, responsável por testar a ligação entre PHP e MariaDB.
+Validação via browser:
+Ao aceder a http://192.168.1.100/dbtest.php, o sistema exibiu a mensagem “Conexão bem-sucedida ao MariaDB!”, confirmando o correto funcionamento da stack.
+Resumo de Validação Final:
+Serviço	Estado	Comando de Verificação
+Apache	✅ Ativo	systemctl status httpd
+PHP	✅ Versão 8.x	php -v
+MariaDB	✅ Ativo e Protegido	systemctl status mariadb
+Firewall	✅ Porta 80 aberta	firewall-cmd --list-all
+Medida de segurança final:
+Após os testes, os ficheiros info.php e dbtest.php foram removidos do servidor para evitar a exposição de informações sensíveis.
+Capítulo 4 – Conectividade e Acesso Seguro (IP Público e SSL)
+Capítulo 4.1 — Configurar o serviço DuckDNS
+Este guia descreve como configurar o serviço DuckDNS para atualizar automaticamente o IP público associado ao domínio dinâmico do seu servidor CentOS, garantindo a acessibilidade externa e o correto funcionamento do Certbot (SSL/TLS).
+
+
+
+🌐 Etapa 1 — Ações Essenciais no Website DuckDNS
+Antes de executar qualquer comando no servidor CentOS, é obrigatório concluir três ações diretamente no site do DuckDNS:
+👉 https://www.duckdns.org/
+1. Criação da Conta e Login
+•	Ação: Acesse o site e inicie sessão (por exemplo, com a sua conta Google).
+•	Resultado: Sua conta DuckDNS será criada automaticamente.
+
+2. Registo do Subdomínio (Domínio Dinâmico)
+•	Ação: Na página principal, registe o subdomínio desejado.
+•	Exemplo: sabordomar.duckdns.org
+•	Resultado: O domínio será associado ao seu IP público atual.
+
+3. Obtenção do Token de Autenticação (Chave Secreta)
+•	Ação: Após o registo, copie o Token de Autenticação exibido na sua conta (uma longa string alfanumérica).
+•	Propósito: Este token é usado pelo script duck.sh para autenticar a atualização do IP.
+📌 Importante:
+No seu script, substitua <SEU_TOKEN> pela chave obtida no site.
+Exemplo:
+hit="https://www.duckdns.org/update?domains=sabordomar&token=<SEU_TOKEN>&ip="
+Sem o token correto, o script no crontab não funcionará.
+
+🖥️ Etapa 2 — Implementação no Servidor CentOS
+1. Criar o Diretório de Trabalho
+Crie e acesse um diretório dedicado para os ficheiros do DuckDNS:
+mkdir duckdns
+cd duckdns
+
+2. Criar o Script de Atualização (duck.sh)
+Crie o ficheiro usando um editor de texto (por exemplo, vi ou nano):
+vi duck.sh
+Conteúdo do script:
+Substitua <SEU_TOKEN> pelo token obtido no site DuckDNS.
+#!/bin/bash
+echo url="https://www.duckdns.org/update?domains=sabordomar&token=<SEU_TOKEN>&ip=" | curl -k -o ~/duckdns/duck.log -K -
+DATA=$(date)
+echo -e "\n${DATA} OK" >> ~/duckdns/duck.log
+💡 Este script faz uma requisição HTTPS ao DuckDNS e registra o resultado no ficheiro duck.log.
+
+3. Tornar o Script Executável
+Defina as permissões de execução:		chmod 700 duck.sh
+
+4. Agendar a Atualização Automática (cron)
+Abra o crontab:	crontab -e
+Adicione a linha abaixo no final do arquivo:	*/5 * * * * ~/duckdns/duck.sh >/dev/null 2>&1
+
+🔁 Este comando garante que o script seja executado a cada 5 minutos, atualizando automaticamente o IP público no DuckDNS.
+
+🔍 Etapa 3 — Verificação e Testes
+Verificar se o cron está ativo	->	ps -ef | grep cr[o]n
+Verificar se o curl está instalado ->	curl --version
+Testar manualmente o script ->	./duck.sh
+Verificar o log do DuckDNS ->		cat duck.log
+
+✅ Resumo Final
+
+Etapa	Descrição	Comando Principal
+1	Criar conta e registar domínio no site DuckDNS	Acesso via navegador
+2	Criar diretório e script duck.sh	mkdir duckdns && cd duckdns
+3	Substituir <SEU_TOKEN> pelo token real	Editar duck.sh
+4	Tornar o script executável	chmod 700 duck.sh
+5	Agendar no cron	crontab -e
+6	Testar e verificar log	./duck.sh e cat duck.log
+
+4.2. Configuração do Apache para Acesso Cifrado (HTTPS)
+O Apache foi configurado para responder a pedidos HTTP e HTTPS, com o objetivo de forçar o redirect de todo o tráfego não seguro para a porta 443, usando um certificado Let's Encrypt válido.
+A. Configuração dos Listeners do Apache
+As diretivas Listen foram confirmadas para aceitar o tráfego nas portas de serviço:
+•	HTTP: Listen 80
+•	HTTPS: Listen 443 https
+Passos para adicionar o Let’s Encrypt (Certbot)
+Ação	Comando
+1️⃣ Instalar pacotes	sudo dnf install mod_ssl openssl certbot python3-certbot-apache -y
+⚙️ 2️⃣ Criar certificados temporários (para o Apache arrancar)
+sudo mkdir -p /etc/pki/tls/certs /etc/pki/tls/private
+sudo openssl req -x509 -nodes -days 1 \
+  -newkey rsa:2048 \
+  -keyout /etc/pki/tls/private/localhost.key \
+  -out /etc/pki/tls/certs/localhost.crt \
+  -subj "/C=PT/ST=Lisboa/L=Lisboa/O=SaborDoMar/OU=IT/CN=localhost"
+🌐 3️⃣ Criar VirtualHost HTTP (porta 80)
+<VirtualHost *:80>
+    ServerName sabordomar.duckdns.org
+    DocumentRoot /var/www/html
+    Redirect permanent / https://sabordomar.duckdns.org/
+</VirtualHost>
+
+ 🔐 4️⃣ Criar certificados Let’s Encrypt simulados
+sudo mkdir -p /etc/letsencrypt/live/sevenseas.com/
+
+sudo openssl req -x509 -nodes -days 365 \
+  -newkey rsa:2048 \
+  -keyout /etc/letsencrypt/live/sevenseas.com/privkey.pem \
+  -out /etc/letsencrypt/live/sevenseas.com/fullchain.pem \
+  -subj "/C=PT/ST=Lisboa/L=Lisboa/O=SevenSeas/OU=IT/CN=sevenseas.com"
+
+🧾 5️⃣ Configurar SSL no Apache
+sudo nano /etc/httpd/conf.d/ssl.conf
+<VirtualHost *:443>
+    ServerName sabordomar.duckdns.org
+    ServerAdmin webmaster@sabordomar.duckdns.org
+    DocumentRoot "/var/www/html"
+
+    ErrorLog logs/sabordomar_ssl_error.log
+    CustomLog logs/sabordomar_ssl_access.log combined
+	
+    <Directory "/var/www/html">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/sabordomar.duckdns.org/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/sabordomar.duckdns.org/privkey.pem
+    
+    SSLProtocol all -SSLv2 -SSLv3
+    SSLCipherSuite HIGH:!aNULL:!MD5
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    
+</VirtualHost>
+
+🔁 6️⃣ Validar e reiniciar
+sudo apachectl configtest
+sudo systemctl restart httpd
+sudo systemctl enable httpd
+Capítulo 5 – Segurança do Servidor (Hardening)
+5.1 Objetivo
+Este capítulo apresenta as medidas de segurança e endurecimento (hardening) aplicadas ao servidor CentOS Stream 9, com o objetivo de reduzir a superfície de ataque e garantir a integridade dos serviços LAMP, do sistema operativo e do acesso administrativo remoto.
+5.2 Atualização e Patches do Sistema
+A atualização contínua do sistema é essencial para eliminar vulnerabilidades conhecidas. O servidor foi mantido com os pacotes mais recentes e o kernel atualizado.
+Implementação:
+1.	Atualização Completa:
+sudo dnf update -y
+2.	Verificação:
+Confirmada a versão atual do kernel e ausência de atualizações pendentes, assegurando que o sistema se encontra em conformidade com as últimas correções de segurança.
+5.3 Gestão de Utilizadores e Permissões
+A administração do servidor foi configurada de acordo com o princípio do mínimo privilégio, criando uma conta administrativa segura e desativando o acesso root via SSH.
+Ação	Comando / Ficheiro	Descrição
+Criar utilizador administrativo	sudo adduser adminsys
+sudo usermod -aG wheel adminsys	Criação de um utilizador não-root com permissões sudo.
+Desativar login root via SSH	sudo nano /etc/ssh/sshd_config → PermitRootLogin no	Impede tentativas de ataque direto à conta root.
+Reiniciar serviço SSH	sudo systemctl restart sshd	Aplica imediatamente as alterações de segurança.
+
+As medidas de segurança do serviço SSH foram reforçadas através da limitação de acesso remoto, desativação do login root e utilização exclusiva de um utilizador administrativo com privilégios sudo.
+
+
+
+5.4 Configuração de Firewall (firewalld)
+Foi configurada uma política de “Deny by Default”, permitindo apenas os serviços essenciais à operação e administração do servidor.
+Ação	Comando	Serviço / Porta Aberta
+Permitir SSH	sudo firewall-cmd --permanent --add-service=ssh	Porta 22 (Acesso remoto administrativo).
+Permitir HTTP	sudo firewall-cmd --permanent --add-service=http	Porta 80 (Redirecionamento para HTTPS).
+Permitir HTTPS	sudo firewall-cmd --permanent --add-service=https	Porta 443 (Tráfego web seguro).
+Recarregar regras	sudo firewall-cmd --reload	Aplica imediatamente as alterações.
+
+5.5 Proteção Contra Ataques – Fail2ban
+Foi implementado o Fail2ban para monitorizar tentativas de login falhadas e bloquear automaticamente endereços IP suspeitos, prevenindo ataques de força bruta.
+Ação	Comando / Alteração	Descrição
+Instalar Fail2ban	sudo dnf install fail2ban -y	Instala o pacote principal.
+Criar ficheiro de configuração local	sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local	Isola as personalizações de configuração.
+Ajustar regras	Editar /etc/fail2ban/jail.local:
+maxretry = 3
+bantime = 3600	Bloqueio de IP após 3 tentativas falhadas durante 1 hora.
+Ativar jails	Ativar nas secções [sshd] e [apache-auth] → enabled = true	Monitora logins SSH e autenticações web.
+Ativar o serviço	sudo systemctl enable --now fail2ban	Inicia e ativa automaticamente o serviço.
+Foi executada uma auditoria das portas abertas no sistema para confirmar que apenas os serviços indispensáveis estavam acessíveis externamente.
+sudo ss -tuln
+Resultado esperado: Apenas as portas 22 (SSH), 80 (HTTP) e 443 (HTTPS) permanecem ativas, garantindo o mínimo de exposição da superfície de ataque.
+5.6 Auditoria e Monitorização
+A monitorização contínua de logs garante a deteção precoce de incidentes e facilita a rastreabilidade administrativa.
+•	Logs do Sistema:
+/var/log/secure – regista tentativas de autenticação.
+/var/log/messages – armazena eventos e erros gerais do sistema.
+•	Logs do Apache:
+Implementados no VirtualHost HTTPS para isolar o tráfego do website:
+o	ErrorLog /var/log/httpd/lamp-error.log
+o	CustomLog /var/log/httpd/lamp-access.log combined
+
+5.10 Implementação do Web Application Firewall (ModSecurity)
+Ação	Comando / Ficheiro	Descrição
+Instalar o módulo WAF	sudo dnf install mod_security -y	Adiciona o ModSecurity ao Apache.
+Instalar regras OWASP CRS	cd /etc/httpd/
+sudo mkdir -p modsecurity-crs
+cd modsecurity-crs
+sudo git clone https://github.com/coreruleset/coreruleset.git
+sudo mv coreruleset/* .	Instala o conjunto de regras padrão de segurança.
+
+sudo cp rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+
+sudo cp rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+Ativar modo de bloqueio	Editar /etc/httpd/conf.d/mod_security.conf → SecRuleEngine On	Coloca o WAF em modo ativo (bloqueio).
+Validar funcionamento	Simular injeção XSS no URL	O pedido é bloqueado e retorna “403 Forbidden”.
+Reiniciar Apache	sudo systemctl restart httpd	Aplica as configurações do WAF.
+
+Depois, no ficheiro nano /etc/httpd/conf.d/mod_security.conf, adiciona:
+
+IncludeOptional /etc/httpd/modsecurity-crs/crs-setup.conf
+IncludeOptional /etc/httpd/modsecurity-crs/rules/*.conf
+
+E reinicia:
+sudo systemctl restart httpd
+
+5.11 Ajustes Adicionais de Segurança (SELinux e Firewalld)
+•	SELinux: Mantido em modo enforcing (Controlo de Acesso Obrigatório), garantindo que processos como Apache e MariaDB operam apenas dentro das permissões definidas.
+getenforce         			# Verifica o estado atual (resultado esperado: Enforcing)
+sudo nano /etc/selinux/config   	# Confirmar SELINUX=enforcing
+
+•	Firewalld: Verificado e mantido ativo em tempo integral, garantindo isolamento de tráfego e bloqueio de pacotes não autorizados.
+5.12 Autenticação Básica no Painel Administrativo
+Para proteger o acesso à página administrativa (reservas_admin.php), foi configurada autenticação básica (Basic Auth) no Apache.
+1.	Criação do ficheiro de credenciais:
+sudo htpasswd -c /etc/httpd/.htpasswd admin
+# Definição de password para o utilizador "admin"
+Alterar o user em nano /var/www/html/processa_reserva.php
+E em nano /var/www/html/reservas_admin.php
+
+2.	Configuração do ficheiro .htaccess (no diretório /var/www/html):
+AuthType Basic
+AuthName "Acesso Restrito - Sabor do Mar Reservas"
+AuthUserFile /etc/httpd/.htpasswd
+Require valid-user
+
+<Files reservas_admin.php>
+Require valid-user
+</Files>
+
+Resultado:
+Somente utilizadores autenticados podem aceder ao painel administrativo, prevenindo o acesso indevido e reforçando a segurança da aplicação web.
+5.13 Conclusão
+Após a aplicação das medidas de hardening, o servidor encontra-se protegido em múltiplas camadas:
+•	Rede: Firewall configurada e portas minimizadas.
+•	Sistema Operativo: SELinux ativo e contas administradas com privilégio mínimo.
+•	Serviços: Proteção com Fail2ban e ModSecurity.
+•	Aplicação: Autenticação básica e logs dedicados.
+Capítulo 6 – Otimização de Desempenho (Tuning)
+6.1. Tuning do PHP (php.ini)
+As otimizações do PHP foram aplicadas no ficheiro principal de configuração nano /etc/php.ini, com foco na melhoria de desempenho, estabilidade e segurança do ambiente de execução das aplicações web.
+Diretiva	Valor Aplicado	Comando / Alteração	Propósito
+date.timezone	Europe/Lisbon	date.timezone = Europe/Lisbon	Garante a precisão de logs e operações baseadas em hora local.
+memory_limit	256M	memory_limit = 256M	Aumenta o limite de memória por script, melhorando a estabilidade de aplicações mais complexas.
+upload_max_filesize	20M	upload_max_filesize = 20M	Define o tamanho máximo permitido para upload de ficheiros.
+post_max_size	25M	post_max_size = 25M	Determina o limite máximo de dados aceites em requisições POST.
+display_errors	Off	display_errors = Off	Oculta mensagens de erro técnicas ao utilizador final, aumentando a segurança.
+Aplicação das alterações:
+sudo systemctl restart httpd
+O serviço Apache foi reiniciado para que o PHP recarregasse as novas configurações.
+6.2. Tuning do MariaDB (my.cnf)
+As configurações do MariaDB foram otimizadas para melhorar o desempenho das consultas e a gestão de memória. As alterações foram realizadas no ficheiro nano /etc/my.cnf.d/mariadb-server.cnf, dentro da secção [mysqld].
+Parâmetro	Valor Aplicado	Descrição Técnica
+innodb_buffer_pool_size	1G	Cache principal de dados e índices; ajustado para cerca de 60% da RAM disponível (2GB).
+innodb_log_file_size	256M	Melhora o desempenho em operações intensivas de escrita (INSERT/UPDATE).
+max_connections	100	Limita as conexões simultâneas para evitar sobrecarga.
+query_cache_size	32M	Mantém resultados de consultas repetidas em cache, reduzindo o tempo de resposta.
+
+Aplicação das alterações:
+sudo systemctl restart mariadb
+O serviço MariaDB foi reiniciado para aplicar os novos parâmetros de desempenho.
+6.3. Tuning do Apache (HTTPD)
+As otimizações no Apache concentraram-se em melhorar a compressão, reduzir latências e otimizar o processamento de conexões simultâneas.
+6.3.1. Ativação de Módulos de Compressão e Cache
+O módulo mod_deflate foi ativado para reduzir o tamanho dos ficheiros enviados ao cliente, otimizando o tempo de carregamento das páginas.
+Trecho configurado em nano /etc/httpd/conf/httpd.conf:
+# Ativa compressão Gzip para ficheiros de texto e código
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/javascript
+</IfModule>
+
+6.3.2. Otimização de Conexões e Timeouts
+Os tempos de espera e a gestão de conexões persistentes foram ajustados para um equilíbrio entre desempenho e eficiência de recursos.
+Diretiva	Valor Aplicado	Justificação Técnica
+KeepAlive	On	Permite múltiplos pedidos na mesma conexão TCP, reduzindo overhead.
+KeepAliveTimeout	5	Liberta conexões ociosas rapidamente, ideal para websites leves.
+Timeout	60	Reduz o tempo máximo de espera por respostas do cliente.
+Essas configurações melhoram o tempo de resposta e diminuem o consumo de memória sob carga.
+6.3.3. Ajuste do MPM (Multi-Processing Module)
+O MPM Event foi otimizado para suportar múltiplas conexões simultâneas com melhor utilização de threads.
+Em nano /etc/httpd/conf.modules.d/00-mpm.conf MaxRequestWorkers foi ajustado para 150, equilibrando o desempenho com os recursos limitados (2 vCPUs / 2GB RAM).
+Aplicação final das configurações:
+sudo systemctl restart httpd
+Após o reinício, o Apache passou a operar com compressão Gzip ativa, menor latência e melhor gestão de recursos sob carga simultânea.
+6.4. Conclusão
+Com as otimizações aplicadas, o ambiente LAMP alcançou:
+•	PHP: scripts mais estáveis e eficientes.
+•	MariaDB: consultas mais rápidas e melhor uso da memória.
+•	Apache: carregamento mais rápido e melhor resposta sob múltiplos acessos.
+Essas melhorias garantem um ambiente de alojamento web robusto, eficiente e preparado para produção, mantendo o equilíbrio entre desempenho e segurança.
+Capítulo 7 – Manutenção e Continuidade de Serviço
+7.1 Objetivo
+Este capítulo descreve as medidas implementadas para garantir a disponibilidade contínua, integridade e fiabilidade do servidor LAMP a longo prazo.
+As práticas incluem backups automáticos, sincronização horária, atualizações de segurança automáticas, rotação de logs e validação de continuidade de serviço, assegurando a recuperação rápida em caso de falhas.
+7.2 Configuração de Backups Diários
+Foi criada uma rotina automatizada de backup diário para salvaguardar a base de dados e os ficheiros do website, garantindo a recuperação do sistema em caso de falha.
+Ação	Comando / Configuração	Descrição
+Criar diretório seguro	sudo mkdir -p /backup/lamp
+sudo chown -R root:root /backup/lamp	Diretório protegido, acessível apenas ao utilizador root.
+Criar script de backup	touch /backup/lamp/backup_lamp.sh	Script responsável por exportar a base de dados (mysqldump) e compactar os ficheiros web (tar -czf).
+Tornar o script executável	sudo chmod +x /backup/lamp/backup_lamp.sh	Permite a execução automática do script.
+Agendar execução diária	sudo crontab -e → adicionar linha:
+0 2 * * * /backup/lamp/backup_lamp.sh	Define o agendamento diário às 02:00 através do cron.
+O backup diário é guardado com carimbo de data (ex: db_YYYY-MM-DD.sql e www_YYYY-MM-DD.tar.gz), permitindo versões históricas de restauração.
+7.3 Sincronização Horária via NTP (chronyd)
+A sincronização horária é essencial para garantir a coerência dos logs, certificados e agendamentos.
+O serviço Chrony foi configurado para sincronizar o relógio do sistema com servidores NTP confiáveis.
+Ação	Comando
+Instalar serviço	sudo dnf install chrony -y
+Ativar e iniciar	sudo systemctl enable chronyd
+sudo systemctl start chronyd
+Verificar sincronização	chronyc sources
+Resultado: o servidor mostra estado “Reachable” e “Synchronized” com as fontes NTP configuradas.
+7.4 Configuração de Atualizações Automáticas
+Para manter o sistema protegido sem necessidade de intervenção manual, foi implementado o dnf-automatic, responsável por aplicar patches e atualizações de segurança automaticamente.
+Ação	Comando / Ficheiro	Descrição
+Instalar o serviço	sudo dnf install dnf-automatic -y	Adiciona o módulo de atualização automática.
+Configurar aplicação automática	nano /etc/dnf/automatic.conf → apply_updates = yes	Define política para aplicar atualizações automaticamente.
+Ativar o timer do systemd	sudo systemctl enable --now dnf-automatic.timer	Agenda a execução periódica das atualizações.
+7.5 Monitorização de Logs e Rotação Automática
+Para evitar que os ficheiros de log cresçam indefinidamente e comprometam o espaço em disco, foi configurada a rotação automática de logs com o utilitário logrotate.
+Ação	Configuração / Ficheiro	Detalhe
+Definir logs do Apache	nano /etc/httpd/conf/httpd.conf → ErrorLog /var/log/httpd/error.log	Centraliza o registo de erros e acessos.
+Configurar rotação automática	nano /etc/logrotate.d/lamp	Define rotação diária, compressão e reinício do Apache após rotação.
+Exemplo de configuração /etc/logrotate.d/lamp:
+
+/var/log/httpd/*.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    postrotate
+        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true
+    endscript }
+7.6 Validação de Continuidade de Serviço
+A fiabilidade do servidor foi testada através de simulações de falha, recuperação e restauração.
+1.	Simulação de Falha:
+sudo systemctl stop httpd
+O website torna-se inacessível, simulando uma falha real.
+2.	Recuperação do Serviço:
+sudo systemctl start httpd
+A página volta a carregar normalmente, confirmando a recuperação funcional.
+3.	Teste de Restauração de Backup:
+tar -xzf /backup/lamp/www_YYYY-MM-DD.tar.gz -C /var/www/html
+mysql -u root -p'SuaSenha' < /backup/lamp/db_YYYY-MM-DD.sql
+
+O website e a base de dados foram restaurados com sucesso, validando o procedimento de recuperação.
+7.7 Boas Práticas de Manutenção
+As seguintes rotinas foram definidas para garantir a saúde e continuidade do ambiente LAMP:
+•	Verificação diária dos logs do Apache e dos bloqueios automáticos do Fail2ban.
+•	Confirmação do funcionamento dos backups automáticos e espaço em disco disponível.
+•	Monitorização do desempenho de Apache, PHP e MariaDB.
+•	Renovação antecipada de certificados SSL/TLS antes do prazo de expiração.
+•	Aplicação manual de atualizações críticas quando necessário.
+7.8 Conclusão
+Com as políticas de backup, sincronização, atualização e monitorização devidamente implementadas, o servidor LAMP apresenta agora:
+•	Alta resiliência e disponibilidade contínua (24/7);
+•	Capacidade de restauração rápida em caso de falha;
+•	Atualizações automáticas sem necessidade de intervenção humana;
+•	Monitorização e gestão de logs eficiente e organizada.
+Estas práticas asseguram que o ambiente permanece estável, atualizado e preparado para operação em produção.
+Capítulo 8 – Validação, Resultados e Documentação Final
+8.1. Objetivo
+O objetivo deste capítulo é confirmar, através de testes práticos, que o ambiente LAMP implementado está totalmente operacional, seguro e otimizado, de acordo com os requisitos definidos no projeto. O resultado visa validar a disponibilidade, a integridade e a segurança do sistema.
+8.2. Testes Funcionais, de Desempenho e Anexos (Configurações e Logs)
+8.2.1. Apache Ativo  
+8.2.2 PHP Instalado
+  
+8.2.3 Estrutura DB
+ 
+8.2.4 Acesso HTTPS
+ 
+8.2.5 Redirecionamento
+ 
+8.2.6 Validade SSL
+ 
+8.2.7 Backup Criado
+ 
+8.2.8 FirewallD Ativo/Portas
+ 
+8.2.9 Fail2ban (Bloqueio)
+ 
+ 
+8.2.10 ModSecurity (WAF) 
+ 
+ 
+8.2.11 Tuning PHP 
+ 
+ 
+ 
+ 
+ 
+
+8.2.12 Tuning MariaDB
+ 
+8.2.13 Agendamento Cron
+ 
+
+8.2.14 httpd.conf
+ 
+
+8.2.15 php.ini
+ 
+
+8.2.16 my.cnf
+ 
+
+8.2.17 chronyc sources
+ 
+
+8.2.18 VirtualHost SSL
+ 
+
+8.2.19 Scripts de Backup
+ 
+ 
+8.2. Validação dos Resultados Esperados
+A validação final comprovou o sucesso na integração de todos os serviços e componentes de segurança.
+Itens Validados:
+•	✅Servidor Apache: Responde corretamente a requisições HTTP e HTTPS.
+•	✅PHP: Processa scripts dinâmicos sem erros e com os parâmetros otimizados ativos.
+•	✅MariaDB: Armazena e recupera dados corretamente, com o serviço protegido e otimizado.
+•	✅SSL/TLS: Implementado e funcional, com redirect automático da porta 80 para a 443.
+•	✅Hardening: Configurações de segurança (Fail2ban, ModSecurity, FirewallD) aplicadas e ativas.
+•	✅Backups: Rotinas automáticas de backup geram arquivos válidos e seguros.
+8.2.2. Checklist de Segurança Validada
+O checklist de segurança verificou e confirmou que todas as medidas de hardening exigidas no Capítulo 4 foram aplicadas com sucesso.
+Validações Chave:
+•	✅Login root SSH: Desativado (PermitRootLogin no).
+•	✅Fail2ban: Serviço ativo e a monitorizar os logs SSH e Apache.
+•	✅FirewallD: Apenas portas 22, 80 e 443 abertas ao exterior.
+•	✅SELinux: Ativo em modo enforcing.
+•	✅ModSecurity (WAF): Ativo com as regras OWASP CRS.
+•	✅SSL/TLS: Certificado ativo e redirect a funcionar.
+8.3. Conclusão e Lições Aprendidas
+O projeto de infraestrutura LAMP foi concluído com sucesso, resultando num servidor CentOS Stream 10 que está totalmente operacional, seguro e otimizado.
+Resultados Finais Validados
+A infraestrutura cumpre todos os requisitos do projeto, destacando-se:
+•	Segurança em Camadas: O ModSecurity (WAF) protegeu contra vulnerabilidades de aplicação (XSS/SQLi), enquanto o Fail2ban e o FirewallD garantiram a segurança de rede e de acesso remoto.
+•	Performance Otimizada (Tuning): Os ajustes de tuning no Apache (MPM Event) e no MariaDB (ajustes de buffer pool e max_connections) resultaram num ambiente com tempos de resposta significativamente melhorados.
+•	Continuidade de Serviço: A ativação das rotinas de backups diários, atualizações automáticas e sincronização NTP asseguram a resiliência e a capacidade de recuperação rápida do sistema.
+•	Acesso Seguro: O site opera em produção simulada com um Certificado Let's Encrypt válido.
+Lições Aprendidas
+O projeto reforçou a importância de testar cada componente de segurança em isolamento e destacou que a performance ideal depende do dimensionamento correto dos recursos de software (MPM, Buffer Pool) para a hardware disponível, o que foi o foco principal do tuning do servidor.
+>>>>>>> ac9db240c610747d0e33584f8b4f43388382d08b
