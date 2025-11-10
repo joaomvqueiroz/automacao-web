@@ -10,23 +10,13 @@ NC='\033[0m'
 
 echo -e "${YELLOW}--- INICIANDO CONFIGURAÇÃO DE SSL COM CERTBOT (Let's Encrypt) ---${NC}"
 
-# --- 1. COLETA INTERATIVA DE PARÂMETROS ---
-echo -e "\n${GREEN}--> Por favor, introduza os dados para o certificado SSL.${NC}"
-read -p "Domínio Principal (Ex: sabordomar.duckdns.org): " DOMAIN
-read -p "Endereço de Email (Para avisos de expiracao): " EMAIL
-read -p "Forçar redirecionamento HTTP -> HTTPS (Y/n)? " REDIRECT_CHOICE
-echo
+# --- 1. VALIDAÇÃO DOS PARÂMETROS RECEBIDOS ---
+DOMAIN=$1
+EMAIL=$2
 
-# --- 2. VALIDAÇÃO E CONFIGURAÇÃO DE ARGUMENTOS ---
 if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
-    echo -e "${RED}ERRO: O Domínio e o Email sao obrigatórios.${NC}"
+    echo -e "${RED}ERRO: O Domínio e o Email são obrigatórios e não foram passados para o script.${NC}"
     exit 1
-fi
-
-if [[ "$REDIRECT_CHOICE" =~ ^[Yy]$ ]]; then
-    CERTBOT_ARGS="--apache --non-interactive --agree-tos --redirect"
-else
-    CERTBOT_ARGS="--apache --non-interactive --agree-tos"
 fi
 
 # --- 3. INSTALAÇÃO DO CERTBOT ---
@@ -38,12 +28,28 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# --- 4. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
+# --- 4. PREPARAÇÃO DO APACHE ---
+echo -e "\n${YELLOW}--> Preparando o Apache para a configuração SSL...${NC}"
+SSL_CONF_FILE="/etc/httpd/conf.d/ssl.conf"
+if [ -f "$SSL_CONF_FILE" ]; then
+    echo -e "${GREEN}--> Desativando a configuração SSL padrão para evitar conflitos...${NC}"
+    sudo mv "$SSL_CONF_FILE" "${SSL_CONF_FILE}.disabled"
+fi
+
+# Testa a sintaxe do Apache antes de prosseguir
+if ! sudo apachectl configtest; then
+    echo -e "${RED}ERRO: A configuração do Apache contém erros mesmo após desativar o ssl.conf. Abortando.${NC}"
+    exit 1
+fi
+
+# --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
 echo -e "\n${YELLOW}--> Solicitando certificado para ${DOMAIN}...${NC}"
 
 # Executa o Certbot de forma nao interativa com todos os dominios necessarios
 # Nota: Adicionamos o subdominio 'www' para cobertura maxima
-sudo certbot ${CERTBOT_ARGS} \
+# O Certbot irá perguntar sobre o redirecionamento interativamente na primeira vez
+sudo certbot --apache \
+    --non-interactive --agree-tos --redirect \
     -m "${EMAIL}" \
     -d "${DOMAIN}" \
     -d "www.${DOMAIN}"
@@ -54,7 +60,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# --- 5. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
+# --- 6. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
 echo -e "\n${GREEN}--> Verificando o agendamento da renovação automática...${NC}"
 # O Certbot instala um timer (systemd) ou cronjob para renovar automaticamente
 sudo systemctl list-timers | grep 'certbot\|snap.certbot.renew'
