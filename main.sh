@@ -41,9 +41,10 @@ echo -e "${YELLOW}=====================================================${NC}"
 echo -e "\n${BLUE}Por favor, forneça as informações necessárias para a automação:${NC}"
 read -p "Qual o seu email para alertas do Fail2ban e registo do SSL? " ADMIN_EMAIL
 read -p "Qual o domínio a ser configurado (ex: sabordomar.duckdns.org)? " DOMAIN_NAME
+read -p "Qual o seu token do DuckDNS para atualização automática do IP? " DUCKDNS_TOKEN
 
-if [ -z "$ADMIN_EMAIL" ] || [ -z "$DOMAIN_NAME" ]; then
-    echo -e "${RED}ERRO: Email e Domínio são obrigatórios. Abortando.${NC}"
+if [ -z "$ADMIN_EMAIL" ] || [ -z "$DOMAIN_NAME" ] || [ -z "$DUCKDNS_TOKEN" ]; then
+    echo -e "${RED}ERRO: Email, Domínio e Token do DuckDNS são obrigatórios. Abortando.${NC}"
     exit 1
 fi
 
@@ -93,7 +94,7 @@ run_script "11-monitoring.sh" "$ADMIN_EMAIL"
 run_script "12-setup_ssl_certificate.sh" "$DOMAIN_NAME" "$ADMIN_EMAIL"
 
 # 9. Configuração do DuckDNS
-run_script "13-setup_duckdns.sh" "$DOMAIN_NAME"
+run_script "13-setup_duckdns.sh" "$DOMAIN_NAME" "$DUCKDNS_TOKEN"
  
 # 10. Validação Final do Ambiente com Python
 echo -e "\n${BLUE}=====================================================${NC}"

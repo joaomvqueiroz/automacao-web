@@ -15,22 +15,16 @@ echo -e "${YELLOW}--- CONFIGURANDO ATUALIZAÇÃO AUTOMÁTICA DO DUCKDNS ---${NC}
 
 # --- 1. VALIDAÇÃO DOS PARÂMETROS ---
 DOMAIN_NAME=$1
-if [ -z "$DOMAIN_NAME" ]; then
-    echo -e "${RED}ERRO: O nome do domínio não foi fornecido a este script.${NC}"
+DUCKDNS_TOKEN=$2
+if [ -z "$DOMAIN_NAME" ] || [ -z "$DUCKDNS_TOKEN" ]; then
+    echo -e "${RED}ERRO: O nome do domínio e o token não foram fornecidos a este script.${NC}"
     exit 1
 fi
 
 # Extrai apenas o subdomínio (ex: 'sabordomar' de 'sabordomar.duckdns.org')
 SUBDOMAIN=$(echo "$DOMAIN_NAME" | cut -d. -f1)
 
-# --- 2. SOLICITAR TOKEN ---
-read -p "Por favor, introduza o seu Token do DuckDNS: " DUCKDNS_TOKEN
-if [ -z "$DUCKDNS_TOKEN" ]; then
-    echo -e "${RED}ERRO: O Token do DuckDNS é obrigatório. Abortando.${NC}"
-    exit 1
-fi
-
-# --- 3. CRIAR DIRETÓRIO E SCRIPT DE ATUALIZAÇÃO ---
+# --- 2. CRIAR DIRETÓRIO E SCRIPT DE ATUALIZAÇÃO ---
 echo -e "\n${GREEN}--> Criando script de atualização em /opt/duckdns/update.sh...${NC}"
 sudo mkdir -p /opt/duckdns
 
@@ -41,7 +35,7 @@ EOL
 
 sudo chmod 700 /opt/duckdns/update.sh
 
-# --- 4. CONFIGURAR O CRON JOB ---
+# --- 3. CONFIGURAR O CRON JOB ---
 echo -e "${GREEN}--> Configurando tarefa no cron para executar a cada 5 minutos...${NC}"
 
 sudo bash -c "cat > /etc/cron.d/duckdns" <<EOL
