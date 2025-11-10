@@ -1,6 +1,6 @@
 #!/bin/bash
-# Script 12: Instalacao e Configuracao Interativa do Certificado SSL Let's Encrypt
-# Objetivo: Solicitar dados do utilizador para automatizar o Certbot.
+# Script 12: Instalação e Configuração do Certificado SSL Let's Encrypt
+# Objetivo: Automatizar a obtenção e configuração de um certificado SSL com Certbot.
 
 # Cores
 GREEN='\033[0;32m'
@@ -19,7 +19,7 @@ if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
     exit 1
 fi
 
-# --- 3. INSTALAÇÃO DO CERTBOT ---
+# --- 2. INSTALAÇÃO DO CERTBOT ---
 echo -e "\n${YELLOW}--> Verificando/Instalando Certbot e o plugin Apache...${NC}"
 # Instala o Certbot (Assumindo que o EPEL ja esta ativo, conforme os scripts anteriores)
 sudo dnf install -y certbot python3-certbot-apache
@@ -28,7 +28,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# --- 4. PREPARAÇÃO DO APACHE ---
+# --- 3. PREPARAÇÃO DO APACHE ---
 echo -e "\n${YELLOW}--> Preparando o Apache para a configuração SSL...${NC}"
 SSL_CONF_FILE="/etc/httpd/conf.d/ssl.conf"
 if [ -f "$SSL_CONF_FILE" ]; then
@@ -36,7 +36,7 @@ if [ -f "$SSL_CONF_FILE" ]; then
     sudo mv "$SSL_CONF_FILE" "${SSL_CONF_FILE}.disabled"
 fi
 
-# --- 5. CRIAR VIRTUALHOST PARA A PORTA 80 ---
+# --- 4. CRIAR VIRTUALHOST PARA A PORTA 80 ---
 echo -e "\n${YELLOW}--> Garantindo que existe um VirtualHost para ${DOMAIN} na porta 80...${NC}"
 VHOST_CONF_FILE="/etc/httpd/conf.d/${DOMAIN}.conf"
 
@@ -64,12 +64,11 @@ fi
 echo -e "${GREEN}--> Recarregando o Apache para aplicar a nova configuração...${NC}"
 sudo systemctl reload httpd
 
-# --- 6. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
+# --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
 echo -e "\n${YELLOW}--> Solicitando certificado para ${DOMAIN}...${NC}"
 
 # Executa o Certbot de forma nao interativa com todos os dominios necessarios
 # Nota: Adicionamos o subdominio 'www' para cobertura maxima
-# O Certbot irá perguntar sobre o redirecionamento interativamente na primeira vez
 sudo certbot --apache \
     --non-interactive --agree-tos --redirect \
     -m "${EMAIL}" \
@@ -82,7 +81,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# --- 7. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
+# --- 6. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
 echo -e "\n${GREEN}--> Verificando o agendamento da renovação automática...${NC}"
 # O Certbot instala um timer (systemd) ou cronjob para renovar automaticamente
 sudo systemctl list-timers | grep 'certbot\|snap.certbot.renew'
