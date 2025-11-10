@@ -36,50 +36,49 @@ if [ -f "$SSL_CONF_FILE" ]; then
     sudo mv "$SSL_CONF_FILE" "${SSL_CONF_FILE}.disabled"
 fi
 
-# --- 4. CRIAR VIRTUALHOST PARA A PORTA 80 ---
-echo -e "\n${YELLOW}--> Garantindo que existe um VirtualHost para ${DOMAIN} na porta 80...${NC}"
-VHOST_CONF_FILE="/etc/httpd/conf.d/${DOMAIN}.conf"
-
-sudo bash -c "cat > $VHOST_CONF_FILE" <<EOL
-<VirtualHost *:80>
-    ServerName ${DOMAIN}
-    ServerAlias www.${DOMAIN}
-    DocumentRoot /var/www/html
-
-    # Diretivas de log (opcional, mas recomendado)
-    ErrorLog /var/log/httpd/${DOMAIN}-error.log
-    CustomLog /var/log/httpd/${DOMAIN}-access.log combined
-</VirtualHost>
-EOL
-
-echo -e "${GREEN}--> Ficheiro de configuração ${VHOST_CONF_FILE} criado.${NC}"
-
-# Testa a sintaxe do Apache antes de prosseguir
-if ! sudo apachectl configtest; then
-    echo -e "${RED}ERRO: A nova configuração do Apache contém erros. Verifique o ficheiro ${VHOST_CONF_FILE}. Abortando.${NC}"
-    exit 1
-fi
-
-# Reinicia o Apache para garantir que o novo VirtualHost seja carregado
-echo -e "${GREEN}--> Reiniciando o Apache para aplicar a nova configuração...${NC}"
-sudo systemctl restart httpd
-
 # --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
-echo -e "\n${YELLOW}--> Solicitando certificado para ${DOMAIN}...${NC}"
-
-# Executa o Certbot de forma nao interativa com todos os dominios necessarios
-# Nota: Adicionamos o subdominio 'www' para cobertura maxima
-sudo certbot --apache \
-    --non-interactive --agree-tos --redirect \
+echo -e "\n${YELLOW}--> PASSO 1: Obtendo o certificado para ${DOMAIN} (apenas os ficheiros)...${NC}"
+sudo certbot certonly --apache --non-interactive --agree-tos \
     -m "${EMAIL}" \
     -d "${DOMAIN}" \
     -d "www.${DOMAIN}"
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}ERRO: Falha ao obter o certificado SSL.${NC}"
-    echo -e "Verifique se a Porta 80 esta aberta e redirecionada para este servidor."
+    echo -e "${RED}ERRO: Falha ao obter os ficheiros do certificado SSL.${NC}"
+    echo -e "Verifique se a Porta 80 está aberta e redirecionada para este servidor e se o Apache está a correr."
     exit 1
 fi
+
+echo -e "\n${YELLOW}--> PASSO 2: Criando a configuração final do Apache em ${SSL_CONF_FILE}...${NC}"
+
+# Apaga o ficheiro de configuração SSL padrão (que já foi renomeado) e cria um novo com o seu conteúdo.
+sudo rm -f "$SSL_CONF_FILE"
+sudo bash -c "cat > $SSL_CONF_FILE" <<EOL
+<VirtualHost *:80>
+    ServerName ${DOMAIN}
+    ServerAlias www.${DOMAIN}
+    DocumentRoot /var/www/html
+    Redirect permanent / https://${DOMAIN}/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName ${DOMAIN}
+    ServerAlias www.${DOMAIN}
+    DocumentRoot "/var/www/html"
+
+    ErrorLog /var/log/httpd/${DOMAIN}_ssl_error.log
+    CustomLog /var/log/httpd/${DOMAIN}_ssl_access.log combined
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/${DOMAIN}/privkey.pem
+
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+</VirtualHost>
+EOL
+
+echo -e "\n${YELLOW}--> PASSO 3: Reiniciando o Apache para aplicar a configuração final...${NC}"
+sudo systemctl restart httpd
 
 # --- 6. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
 echo -e "\n${GREEN}--> Verificando o agendamento da renovação automática...${NC}"
