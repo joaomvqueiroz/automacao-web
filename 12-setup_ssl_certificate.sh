@@ -60,9 +60,9 @@ if ! sudo apachectl configtest; then
     exit 1
 fi
 
-# Recarrega o Apache para aplicar o novo VirtualHost
-echo -e "${GREEN}--> Recarregando o Apache para aplicar a nova configuração...${NC}"
-sudo systemctl reload httpd
+# Reinicia o Apache para garantir que o novo VirtualHost seja carregado
+echo -e "${GREEN}--> Reiniciando o Apache para aplicar a nova configuração...${NC}"
+sudo systemctl restart httpd
 
 # --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
 echo -e "\n${YELLOW}--> Solicitando certificado para ${DOMAIN}...${NC}"
