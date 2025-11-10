@@ -36,29 +36,26 @@ if [ -f "$SSL_CONF_FILE" ]; then
     sudo mv "$SSL_CONF_FILE" "${SSL_CONF_FILE}.disabled"
 fi
 
-# --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
-echo -e "\n${YELLOW}--> PASSO 1: Obtendo o certificado para ${DOMAIN} (apenas os ficheiros)...${NC}"
-sudo certbot certonly --apache --non-interactive --agree-tos \
-    -m "${EMAIL}" \
-    -d "${DOMAIN}" \
-    -d "www.${DOMAIN}"
+# --- 4. GERAR CERTIFICADO TEMPORÁRIO E CONFIGURAR APACHE ---
+echo -e "\n${YELLOW}--> PASSO 1: Gerando certificado temporário para o Apache poder iniciar...${NC}"
 
-if [ $? -ne 0 ]; then
-    echo -e "${RED}ERRO: Falha ao obter os ficheiros do certificado SSL.${NC}"
-    echo -e "Verifique se a Porta 80 está aberta e redirecionada para este servidor e se o Apache está a correr."
-    exit 1
-fi
+# Cria diretórios para os certificados temporários
+sudo mkdir -p /etc/letsencrypt/live/${DOMAIN}/
 
-echo -e "\n${YELLOW}--> PASSO 2: Criando a configuração final do Apache em ${SSL_CONF_FILE}...${NC}"
+# Gera o certificado autoassinado
+sudo openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+  -keyout /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
+  -out /etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
+  -subj "/C=PT/ST=Lisboa/L=Lisboa/O=Temporary/CN=${DOMAIN}"
 
-# Apaga o ficheiro de configuração SSL padrão (que já foi renomeado) e cria um novo com o seu conteúdo.
+echo -e "\n${YELLOW}--> PASSO 2: Criando a configuração final do Apache (com certificado temporário)...${NC}"
 sudo rm -f "$SSL_CONF_FILE"
 sudo bash -c "cat > $SSL_CONF_FILE" <<EOL
 <VirtualHost *:80>
     ServerName ${DOMAIN}
     ServerAlias www.${DOMAIN}
     DocumentRoot /var/www/html
-    Redirect permanent / https://${DOMAIN}/
+    # O Certbot irá gerir o redirecionamento mais tarde
 </VirtualHost>
 
 <VirtualHost *:443>
@@ -77,7 +74,22 @@ sudo bash -c "cat > $SSL_CONF_FILE" <<EOL
 </VirtualHost>
 EOL
 
-echo -e "\n${YELLOW}--> PASSO 3: Reiniciando o Apache para aplicar a configuração final...${NC}"
+echo -e "\n${YELLOW}--> PASSO 3: Reiniciando o Apache para carregar a configuração temporária...${NC}"
+sudo systemctl restart httpd
+
+echo -e "\n${YELLOW}--> PASSO 4: Solicitando o certificado real da Let's Encrypt...${NC}"
+sudo certbot --apache --non-interactive --agree-tos --redirect --expand \
+    -m "${EMAIL}" \
+    -d "${DOMAIN}" \
+    -d "www.${DOMAIN}"
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}ERRO: Falha ao obter o certificado real da Let's Encrypt.${NC}"
+    echo -e "Verifique se o seu domínio ${DOMAIN} está a apontar para o IP público correto deste servidor."
+    exit 1
+fi
+
+echo -e "\n${YELLOW}--> PASSO 5: Reiniciando o Apache para aplicar o certificado final...${NC}"
 sudo systemctl restart httpd
 
 # --- 6. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
