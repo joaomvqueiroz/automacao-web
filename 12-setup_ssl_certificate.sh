@@ -36,13 +36,35 @@ if [ -f "$SSL_CONF_FILE" ]; then
     sudo mv "$SSL_CONF_FILE" "${SSL_CONF_FILE}.disabled"
 fi
 
+# --- 5. CRIAR VIRTUALHOST PARA A PORTA 80 ---
+echo -e "\n${YELLOW}--> Garantindo que existe um VirtualHost para ${DOMAIN} na porta 80...${NC}"
+VHOST_CONF_FILE="/etc/httpd/conf.d/${DOMAIN}.conf"
+
+sudo bash -c "cat > $VHOST_CONF_FILE" <<EOL
+<VirtualHost *:80>
+    ServerName ${DOMAIN}
+    ServerAlias www.${DOMAIN}
+    DocumentRoot /var/www/html
+
+    # Diretivas de log (opcional, mas recomendado)
+    ErrorLog /var/log/httpd/${DOMAIN}-error.log
+    CustomLog /var/log/httpd/${DOMAIN}-access.log combined
+</VirtualHost>
+EOL
+
+echo -e "${GREEN}--> Ficheiro de configuração ${VHOST_CONF_FILE} criado.${NC}"
+
 # Testa a sintaxe do Apache antes de prosseguir
 if ! sudo apachectl configtest; then
-    echo -e "${RED}ERRO: A configuração do Apache contém erros mesmo após desativar o ssl.conf. Abortando.${NC}"
+    echo -e "${RED}ERRO: A nova configuração do Apache contém erros. Verifique o ficheiro ${VHOST_CONF_FILE}. Abortando.${NC}"
     exit 1
 fi
 
-# --- 5. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
+# Recarrega o Apache para aplicar o novo VirtualHost
+echo -e "${GREEN}--> Recarregando o Apache para aplicar a nova configuração...${NC}"
+sudo systemctl reload httpd
+
+# --- 6. OBTENÇÃO E INSTALAÇÃO DO CERTIFICADO ---
 echo -e "\n${YELLOW}--> Solicitando certificado para ${DOMAIN}...${NC}"
 
 # Executa o Certbot de forma nao interativa com todos os dominios necessarios
@@ -60,7 +82,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# --- 6. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
+# --- 7. VERIFICAÇÃO DA RENOVAÇÃO AUTOMÁTICA ---
 echo -e "\n${GREEN}--> Verificando o agendamento da renovação automática...${NC}"
 # O Certbot instala um timer (systemd) ou cronjob para renovar automaticamente
 sudo systemctl list-timers | grep 'certbot\|snap.certbot.renew'
