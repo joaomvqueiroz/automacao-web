@@ -91,6 +91,9 @@ run_script "11-monitoring.sh" "$ADMIN_EMAIL"
 
 # 8. Configuração do Certificado SSL
 run_script "12-setup_ssl_certificate.sh" "$DOMAIN_NAME" "$ADMIN_EMAIL"
+
+# 9. Configuração do DuckDNS
+run_script "13-setup_duckdns.sh" "$DOMAIN_NAME"
  
 # 10. Validação Final do Ambiente com Python
 echo -e "\n${BLUE}=====================================================${NC}"
