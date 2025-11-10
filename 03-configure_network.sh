@@ -30,7 +30,7 @@ CONN_NAME=$(nmcli connection show --active | grep "$NET_IFACE" | awk '{print $1}
 if [ -z "$CONN_NAME" ]; then
     CONN_NAME="$NET_IFACE"
 fi
-
+    
 read -p "Digite o IP do servidor no formato CIDR (ex: 192.168.1.100/24): " IP_CIDR
 read -p "Digite o gateway padrão: " GATEWAY
 read -p "Digite o servidor DNS principal: " DNS_SERVER

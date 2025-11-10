@@ -55,8 +55,16 @@ fi
 
 # --- Execução Sequencial dos Scripts ---
 
-# 1. Preparação: tornar todos os scripts executáveis
-run_script "make_all_executable.sh"
+# 1. Preparação: tornar todos os outros scripts (.sh) executáveis
+echo -e "\n${BLUE}=====================================================${NC}"
+echo -e "${BLUE}==> PREPARANDO: Tornando scripts executáveis...${NC}"
+echo -e "${BLUE}=====================================================${NC}"
+for file in *.sh; do
+    if [ -f "$file" ] && [ "$file" != "main.sh" ]; then
+        sudo chmod +x "$file"
+    fi
+done
+echo -e "${GREEN}==> SUCESSO: Permissões de execução aplicadas.${NC}"
 
 # 2. Instalação dos serviços base
 run_script "01-install_services.sh"
