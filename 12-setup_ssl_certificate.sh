@@ -1,6 +1,6 @@
 #!/bin/bash
-# Script 12: Instalação e Configuração do Certificado SSL Let's Encrypt
-# Objetivo: Automatizar a obtenção e configuração de um certificado SSL com Certbot.
+# Script 12: Instalação e Configuração do Certificado SSL Let's Encrypt (NÃO INTERATIVO)
+# Objetivo: Usar os argumentos passados pelo main.sh para automatizar o Certbot.
 
 # Cores
 GREEN='\033[0;32m'
