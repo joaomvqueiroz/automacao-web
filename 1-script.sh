@@ -77,10 +77,29 @@ else
 fi
 echo "--------------------------------------------------------"
 
-# --- 5. Criação do Ficheiro de Teste (info.php) ---
-log_info "5. Criação e Validação do Ficheiro info.php"
-echo ">> A criar o ficheiro /var/www/html/info.php para teste..."
-echo '<?php phpinfo(); ?>' | sudo tee /var/www/html/info.php > /dev/null
+# --- 5. Instalação do Website a partir do Repositório Git ---
+log_info "5. Instalação do Website a partir do Repositório Git"
+
+echo ">> A verificar se o 'git' está instalado..."
+if ! command -v git &> /dev/null; then
+    echo ">> 'git' não encontrado. A instalar..."
+    sudo dnf install git -y
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ ERRO: Falha ao instalar o 'git'. A sair.${NC}"
+        exit 1
+    fi
+fi
+
+echo ">> A remover o diretório /var/www/html existente..."
+sudo rm -rf /var/www/html
+
+echo ">> A clonar o repositório https://github.com/joaomvqueiroz/html.git para /var/www/html..."
+sudo git clone https://github.com/joaomvqueiroz/html.git /var/www/html
+
+if [ ! -d "/var/www/html" ]; then
+    echo -e "${RED}❌ ERRO: Falha ao clonar o repositório do website. A sair.${NC}"
+    exit 1
+fi
 
 echo ">> A reiniciar o Apache para carregar as configurações do PHP..."
 sudo systemctl restart httpd
@@ -91,5 +110,5 @@ echo -e "${GREEN}Status dos Serviços:${NC}"
 echo "Apache: $(sudo systemctl is-active httpd)"
 echo "MariaDB: $(sudo systemctl is-active mariadb)"
 echo "PHP Versão: $(php -v | head -n 1)"
-echo -e "${GREEN}Pode verificar a acessibilidade no browser através do IP simulado (${IP_SIMULADO}/info.php).${NC}"
+echo -e "${GREEN}Pode verificar a acessibilidade do website no browser através do IP do servidor.${NC}"
 echo "--------------------------------------------------------"

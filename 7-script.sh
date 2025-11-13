@@ -123,11 +123,104 @@ sudo sed -i '/<IfModule mpm_event_module>/,/<\/IfModule>/ {
 }' "$MPM_CONF"
 echo -e "${GREEN}✔️ Parâmetros do MPM Event ajustados.${NC}"
 
+# ===================================================================
+# 6. Configuração de Domínio e SSL/TLS (Let's Encrypt)
+# Lógica movida do script 20 para unificar a configuração do Apache.
+# ===================================================================
+log_info "6. Configuração de Domínio, DuckDNS e SSL/TLS (Let's Encrypt)"
 
-# 6. Reinicia o Apache
-log_info "6. Reinício do Apache"
-echo "🔁 A reiniciar Apache..."
-sudo systemctl enable httpd
+read -p "Deseja configurar um domínio com DuckDNS e SSL/TLS da Let's Encrypt agora? (s/n): " CONFIGURE_SSL
+
+if [[ "$CONFIGURE_SSL" =~ ^[Ss]$ ]]; then
+
+    # --- 6.1. Solicitar dados do usuário ---
+    read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
+    read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
+    read -p "Digite um e-mail para Let’s Encrypt/Apache: " SERVER_EMAIL
+
+    APACHE_DOMAIN="${DUCK_DOMAIN}.duckdns.org"
+    DUCK_DIR="/root/duckdns"
+    DUCK_SCRIPT="${DUCK_DIR}/duck.sh"
+    DUCK_LOG="${DUCK_DIR}/duck.log"
+
+    echo -e "${GREEN}✅ Domínio a ser configurado: ${APACHE_DOMAIN}${NC}"
+    echo "--------------------------------------------------------"
+
+    # --- 6.2. Instalar Certbot e configurar Firewall ---
+    log_info "6.2. Instalando Certbot e ajustando Firewall"
+    sudo dnf install certbot python3-certbot-apache -y
+    sudo firewall-cmd --permanent --add-service=http --add-service=https
+    sudo firewall-cmd --reload
+    echo -e "${GREEN}✔️ Certbot instalado e firewall configurado.${NC}"
+    echo "--------------------------------------------------------"
+
+    # --- 6.3. Configuração do DuckDNS ---
+    log_info "6.3. Configurando o cliente DuckDNS"
+    sudo mkdir -p "$DUCK_DIR" && sudo chmod 700 "$DUCK_DIR"
+
+    IPV4=$(curl -4 -s ifconfig.me)
+    IPV6=$(curl -6 -s ifconfig.co || echo "")
+
+    sudo bash -c "cat > ${DUCK_SCRIPT}" <<EOF
+#!/bin/bash
+URL="https://www.duckdns.org/update?domains=${DUCK_DOMAIN}&token=${DUCK_TOKEN}&ip=${IPV4}"
+EOF
+
+    if [ -n "$IPV6" ]; then
+        sudo bash -c "echo 'URL=\"\${URL}&ipv6=${IPV6}\"' >> ${DUCK_SCRIPT}"
+    fi
+
+    sudo bash -c "cat >> ${DUCK_SCRIPT}" <<'EOF2'
+echo url="${URL}" | curl -k -o /root/duckdns/duck.log -K -
+DATE=$(date)
+echo "$DATE - Atualização executada" >> /root/duckdns/duck.log
+EOF2
+
+    sudo chmod 700 "$DUCK_SCRIPT"
+    (sudo crontab -l 2>/dev/null; echo "*/5 * * * * ${DUCK_SCRIPT} >/dev/null 2>&1") | sudo crontab -
+
+    echo ">> A executar a primeira atualização do DuckDNS..."
+    sudo bash "$DUCK_SCRIPT"
+    sleep 5 # Aguarda a propagação do DNS
+
+    if grep -q "OK" "$DUCK_LOG" 2>/dev/null; then
+        echo -e "${GREEN}✔️ DuckDNS atualizado com sucesso.${NC}"
+    else
+        echo -e "${YELLOW}⚠️ Verifique o log do DuckDNS em ${DUCK_LOG}. Pode haver um problema com o token ou domínio.${NC}"
+    fi
+    echo "--------------------------------------------------------"
+
+    # --- 6.4. Testar configuração e reiniciar Apache antes do Certbot ---
+    log_info "6.4. Testando e Reiniciando o Apache"
+    sudo apachectl configtest
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ ERRO FATAL: Falha na sintaxe da configuração do Apache. Por favor, corrija antes de continuar.${NC}"
+        exit 1
+    fi
+    sudo systemctl restart httpd
+    echo "--------------------------------------------------------"
+
+    # --- 6.5. Emitir certificado Let’s Encrypt ---
+    log_info "6.5. Solicitando certificado SSL/TLS da Let's Encrypt"
+    
+    # O Certbot criará os VirtualHosts necessários ou modificará os existentes.
+    sudo certbot --apache -d "$APACHE_DOMAIN" --non-interactive --agree-tos -m "$SERVER_EMAIL" --redirect --hsts
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✔️ Certificado SSL emitido e configurado com sucesso para https://${APACHE_DOMAIN}${NC}"
+    else
+        echo -e "${RED}❌ Falha ao emitir o certificado Let’s Encrypt. Verifique os logs do Certbot em /var/log/letsencrypt/.${NC}"
+    fi
+
+else
+    echo -e "${YELLOW}Configuração de SSL/TLS ignorada. Apenas o tuning de performance foi aplicado.${NC}"
+fi
+
+# 7. Validação Final e Reinício do Apache
+log_info "7. Validação Final e Reinício do Apache"
+echo "🔁 A testar a configuração final e a reiniciar o Apache..."
+sudo systemctl enable httpd >/dev/null 2>&1
+
 sudo apachectl configtest
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ ERRO FATAL: Falha na sintaxe da configuração do Apache. Por favor, corrija antes de reiniciar.${NC}"
@@ -135,7 +228,7 @@ if [ $? -ne 0 ]; then
 fi
 sudo systemctl restart httpd
 
-if systemctl is-active --quiet httpd; then
+if sudo systemctl is-active --quiet httpd; then
     echo -e "${GREEN}✅ Apache otimizado e em execução!${NC}"
 else
     echo -e "${RED}❌ Erro ao iniciar o Apache. Verifique o log.${NC}"
