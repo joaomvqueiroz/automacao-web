@@ -130,21 +130,24 @@ read -p "Deseja configurar o DuckDNS e agendamento via cron? (s/n): " duck_respo
 
 if [[ "$duck_response" =~ ^[Ss]$ ]]; then
     if check_command curl && check_command crontab; then
+        read -p "Digite o seu subdomínio DuckDNS (ex: meuservidor): " DUCK_DOMAIN
+        read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
+
         echo ">> Criando diretório e script do DuckDNS..."
         sudo mkdir -p /root/duckdns
         sudo chmod 700 /root/duckdns
 
-        cat <<'EOF' | sudo tee /root/duckdns/duck.sh >/dev/null
+        cat <<EOF | sudo tee /root/duckdns/duck.sh >/dev/null
 #!/bin/bash
-echo url="https://www.duckdns.org/update?domains=SEU_DOMINIO&token=SEU_TOKEN&ip=" | curl -k -o ~/duckdns/duck.log -K -
+echo url="https://www.duckdns.org/update?domains=${DUCK_DOMAIN}&token=${DUCK_TOKEN}&ip=" | curl -k -o /root/duckdns/duck.log -K -
 DATA=$(date)
-echo -e "\n${DATA} OK" >> ~/duckdns/duck.log
+echo -e "\n\${DATA} OK" >> /root/duckdns/duck.log
 EOF
 
         sudo chmod 700 /root/duckdns/duck.sh
 
         (sudo crontab -l 2>/dev/null; echo "*/5 * * * * /root/duckdns/duck.sh >/dev/null 2>&1") | sudo crontab -
-        echo -e "${GREEN}✔️ DuckDNS configurado (edite /root/duckdns/duck.sh com seu domínio/token).${NC}"
+        echo -e "${GREEN}✔️ DuckDNS configurado e agendado com sucesso para o domínio '${DUCK_DOMAIN}'.${NC}"
     else
         echo -e "${RED}❌ curl ou crontab não estão instalados.${NC}"
     fi
