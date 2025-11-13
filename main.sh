@@ -35,12 +35,11 @@ SCRIPTS[3]="Configuração de Rede e Firewall"
 SCRIPTS[4]="Auditoria de SELinux e Segurança"
 SCRIPTS[5]="Configuração do Fail2ban (SSH e Apache)"
 SCRIPTS[6]="Configuração do ModSecurity (WAF com OWASP CRS)"
-SCRIPTS[7]="Tuning do Apache (Performance)"
+SCRIPTS[7]="Tuning do Apache (Performance e SSL/TLS Opcional)"
 SCRIPTS[8]="Tuning do MariaDB (Performance)"
 SCRIPTS[9]="Ajustes do PHP (Performance e Ambiente)"
 SCRIPTS[10]="Atualizações e Backup do Sistema"
 SCRIPTS[11]="Monitorização e Alertas"
-SCRIPTS[20]="Configuração de HTTPS com DuckDNS e Let's Encrypt"
 
 # =================================================================
 # 1. MENU DE SELEÇÃO DE SCRIPTS
@@ -51,23 +50,29 @@ echo -e "${YELLOW}Por favor, escolha os scripts que deseja executar:${NC}"
 for i in $(echo "${!SCRIPTS[@]}" | tr ' ' '\n' | sort -n); do
     printf "  %-2s) %s\n" "$i" "${SCRIPTS[$i]}"
 done
-echo -e "  ${GREEN}A) Executar TODOS os scripts em ordem${NC}"
-echo -e "\n(Pode escolher múltiplos scripts separados por vírgula, ex: 1,3,5)"
+echo -e "\n  ${GREEN}99) Executar TODOS os scripts em ordem${NC}"
+echo -e "  ${RED}0) Sair${NC}"
+echo -e "\n(Pode escolher múltiplos scripts separados por espaço, ex: 1 3 5)"
 read -p "Sua escolha: " user_choice
 
 scripts_to_run=()
-if [[ "$user_choice" =~ ^[Aa]$ ]]; then
+if [[ "$user_choice" == "0" ]]; then
+    echo -e "${YELLOW}A sair do gestor. Nenhuma ação foi executada.${NC}"
+    exit 0
+elif [[ "$user_choice" == "99" ]]; then
     # Opção "Todos"
     scripts_to_run=($(echo "${!SCRIPTS[@]}" | tr ' ' '\n' | sort -n))
 else
     # Opção de seleção múltipla
-    IFS=',' read -ra choices <<< "$user_choice"
+    read -ra choices <<< "$user_choice"
     for choice in "${choices[@]}"; do
-        choice=$(echo "$choice" | xargs) # Limpa espaços
         if [[ -n "${SCRIPTS[$choice]}" ]]; then
             scripts_to_run+=("$choice")
         else
-            echo -e "${RED}Opção inválida '$choice' ignorada.${NC}"
+            # Ignorar entradas vazias que podem vir de múltiplos espaços
+            if [[ -n "$choice" ]]; then
+                echo -e "${RED}Opção inválida '$choice' ignorada.${NC}"
+            fi
         fi
     done
 fi
