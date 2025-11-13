@@ -21,6 +21,10 @@ log_info() {
     echo -e "${BLUE}--- $1 ---${NC}"
 }
 
+check_command() {
+    command -v "$1" >/dev/null 2>&1
+}
+
 echo -e "${YELLOW}--- 🛠️ Iniciando a Configuração do ModSecurity (WAF) ---${NC}"
 
 # 1. Instalar o Módulo ModSecurity para Apache
@@ -38,16 +42,23 @@ echo "--------------------------------------------------------"
 # 2. Instalar as Regras OWASP CRS
 log_info "2. Instalação e Configuração das Regras OWASP CRS"
 
+# Verifica se o git está instalado
+if ! check_command git; then
+    echo -e "${RED}❌ ERRO: O comando 'git' não foi encontrado. Instale-o com 'sudo dnf install git -y' e tente novamente. A sair.${NC}"
+    exit 1
+fi
+
 echo ">> A criar diretório de regras: $MODSEC_DIR"
 sudo mkdir -p "$MODSEC_DIR"
-sudo cd "$MODSEC_DIR" || { echo -e "${RED}❌ ERRO: Falha ao mudar para o diretório $MODSEC_DIR. A sair.${NC}"; exit 1; }
+
+# Navega para o diretório antes de clonar
+cd "$MODSEC_DIR" || { echo -e "${RED}❌ ERRO: Falha ao mudar para o diretório $MODSEC_DIR. A sair.${NC}"; exit 1; }
 
 echo ">> A clonar o repositório OWASP CRS..."
-sudo git clone "$CRS_GIT_REPO"
-sudo mv coreruleset/* .
+sudo git clone "$CRS_GIT_REPO" .
 
 # Remover o diretório vazio clonado
-sudo rm -rf coreruleset/
+# O repositório é clonado diretamente para o diretório atual, então não há 'coreruleset/' para remover.
 
 # Copiar ficheiros de exclusão de exemplo (essencial para evitar erros)
 echo ">> A copiar ficheiros de exclusão de regras de exemplo..."
@@ -55,28 +66,48 @@ sudo cp rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example rules/REQUEST-
 sudo cp rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
 
 echo -e "${GREEN}✔️ Regras OWASP CRS instaladas em $MODSEC_DIR.${NC}"
+# Retorna ao diretório original
+cd - > /dev/null
 echo "--------------------------------------------------------"
 
 # 3. Ativar e Configurar o ModSecurity no Apache
 log_info "3. Ativação do WAF (Web Application Firewall)"
 
-# A. Ativar SecRuleEngine On
-echo ">> A definir 'SecRuleEngine On' e a incluir as regras no $MODSEC_CONF..."
+# A. Configurar mod_security.conf
+echo ">> A configurar $MODSEC_CONF..."
 
-# Sobrescrever ou garantir SecRuleEngine On no ficheiro principal
-if [ -f "$MODSEC_CONF" ]; then
-    # Substitui a linha para garantir que está Ativo
-    sudo sed -i 's/SecRuleEngine .*/SecRuleEngine On/' "$MODSEC_CONF"
-else
-    # Se o ficheiro não existir, criamos (cenário raro)
-    echo "SecRuleEngine On" | sudo tee "$MODSEC_CONF" > /dev/null
+# Garante que SecRuleEngine está On
+sudo sed -i 's/^SecRuleEngine DetectionOnly/SecRuleEngine On/' "$MODSEC_CONF"
+sudo sed -i '/^SecRuleEngine/!b; s/.*/SecRuleEngine On/' "$MODSEC_CONF" # Fallback if line is different
+
+# Adiciona SecRequestBodyAccess On se não existir
+if ! grep -q "SecRequestBodyAccess On" "$MODSEC_CONF"; then
+    echo "SecRequestBodyAccess On" | sudo tee -a "$MODSEC_CONF" > /dev/null
 fi
 
-# B. Adicionar includes para carregar as regras
-# Garantir que os includes do CRS estão no ficheiro de configuração (o relatório sugere adicionar):
+# Adiciona configurações de auditoria
+if ! grep -q "SecAuditEngine RelevantOnly" "$MODSEC_CONF"; then
+    echo "SecAuditEngine RelevantOnly" | sudo tee -a "$MODSEC_CONF" > /dev/null
+    echo "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"" | sudo tee -a "$MODSEC_CONF" > /dev/null
+    echo "SecAuditLogType Concurrent" | sudo tee -a "$MODSEC_CONF" > /dev/null
+    echo "SecAuditLog /var/log/httpd/modsec_audit.log" | sudo tee -a "$MODSEC_CONF" > /dev/null
+fi
+
+# B. Adicionar includes para carregar as regras no mod_security.conf
 echo ">> A adicionar includes das regras OWASP CRS..."
+
+# Remove includes antigos para evitar duplicação
+sudo sed -i '/IncludeOptional .*modsecurity-crs\/crs-setup.conf/d' "$MODSEC_CONF"
+sudo sed -i '/IncludeOptional .*modsecurity-crs\/rules\/\*.conf/d' "$MODSEC_CONF"
+
+# Adiciona os includes no final do ficheiro
 echo -e "\nIncludeOptional $MODSEC_DIR/crs-setup.conf" | sudo tee -a "$MODSEC_CONF" > /dev/null
 echo -e "IncludeOptional $MODSEC_DIR/rules/*.conf" | sudo tee -a "$MODSEC_CONF" > /dev/null
+
+# C. Configurar crs-setup.conf para modo de prevenção
+echo ">> A configurar $MODSEC_DIR/crs-setup.conf para modo de prevenção..."
+sudo sed -i 's/^SecRuleEngine DetectionOnly/SecRuleEngine On/' "$MODSEC_DIR/crs-setup.conf"
+sudo sed -i 's/^#SecRuleEngine On/SecRuleEngine On/' "$MODSEC_DIR/crs-setup.conf" # Caso esteja comentado
 
 echo -e "${GREEN}✔️ ModSecurity configurado para o modo ativo (SecRuleEngine On).${NC}"
 echo "--------------------------------------------------------"
@@ -87,7 +118,7 @@ echo ">> A reiniciar o Apache para aplicar o WAF..."
 sudo systemctl restart httpd
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✔️ Apache reiniciado com sucesso. ModSecurity está ativo.${NC}"
+    echo -e "${GREEN}✔️ Apache reiniciado com sucesso. ModSecurity deve estar ativo.${NC}"
     
     # Teste Simulado (Baseado no seu relatório)
     echo -e "\n${YELLOW}>> TESTE DE PROTEÇÃO SIMULADO (Tentativa de XSS):${NC}"
