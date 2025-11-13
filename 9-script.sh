@@ -101,9 +101,3 @@ log_ok "Ajustes PHP concluídos com sucesso!"
 echo -e "${GREEN}=====================================================${NC}"
 echo -e "${GREEN}Parâmetros atualizados e serviço verificado.${NC}"
 echo -e "${GREEN}=====================================================${NC}"
-
-
-# Script 9 (Final)
-
-echo "--- 5. Executar Validação Python ---"
-sudo python3 validate_config.py
