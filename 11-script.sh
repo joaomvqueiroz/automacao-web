@@ -61,14 +61,14 @@ enviar_alerta() {
     local MSG="$1"
     local SUBJECT="$2"
 
-    if ! command -v mail &> /dev/null; then
+    if ! command -v sendmail &> /dev/null; then
         echo "Nenhum MTA ativo. Instalando postfix..."
         yum install -y postfix
         systemctl enable --now postfix
     fi
 
-    echo "$MSG" | mail -s "$SUBJECT" "$EMAIL_ALERTA"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $SUBJECT - $MSG" >> "$LOG_ALERTS"
+    echo "$MSG" | sendmail -t "$EMAIL_ALERTA" -s "$SUBJECT"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') - $SUBJECT - $MSG" >> "$LOG_ALERTS"
 }
 
 # ------------------------------------------------------
