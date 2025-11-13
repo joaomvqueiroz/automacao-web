@@ -31,8 +31,6 @@ echo "--------------------------------------------------------"
 
 # --- 2. Instalação e Ativação do Apache (HTTPD) ---
 log_info "2. Instalação e Verificação do Servidor Apache (HTTPD)"
-echo ">> A instalar o Apache..."
-sudo dnf install httpd -y
 echo ">> A instalar o Apache (httpd) e o módulo SSL (mod_ssl)..."
 sudo dnf install httpd mod_ssl -y
 
