@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================================
-# Script: Apache HTTPS + SSL + DuckDNS (IPv4 & IPv6, fallback)
+# Script 20: Apache HTTPS + SSL + DuckDNS (IPv4 & IPv6, fallback)
 # =================================================================
 
 # Cores
