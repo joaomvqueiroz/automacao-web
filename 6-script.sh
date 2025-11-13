@@ -61,6 +61,9 @@ sudo git clone "$CRS_GIT_REPO" .
 # O repositório é clonado diretamente para o diretório atual, então não há 'coreruleset/' para remover.
 
 # Copiar ficheiros de exclusão de exemplo (essencial para evitar erros)
+echo ">> A criar o ficheiro de configuração principal do CRS (crs-setup.conf)..."
+sudo cp crs-setup.conf.example crs-setup.conf
+
 echo ">> A copiar ficheiros de exclusão de regras de exemplo..."
 sudo cp rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
 sudo cp rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
