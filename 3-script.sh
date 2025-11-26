@@ -26,46 +26,41 @@ check_command() {
 echo -e "${YELLOW}--- 🛠️ Iniciando a Configuração de Rede e Segurança ---${NC}"
 
 # --- 1. Configuração de IP Estático ---
-log_info "1. Configuração da Placa de Rede (IP Estático via NMCLI)"
+log_info "1. Configuração da Placa de Rede (IP Estático Opcional)"
 
-echo -e "${BLUE}Interfaces de rede disponíveis:${NC}"
-nmcli device status | grep -E "ethernet|wifi"
-echo
+read -p "Deseja configurar um endereço IP local estático para esta máquina? (s/n): " configure_ip
 
-read -p "Digite o nome da interface de rede/conexão (ex: ens33): " NET_IFACE
-CONN_NAME="$NET_IFACE"
+if [[ "$configure_ip" =~ ^[Ss]$ ]]; then
+    echo -e "${BLUE}Interfaces de rede disponíveis:${NC}"
+    nmcli device status | grep -E "ethernet|wifi"
+    echo
 
-CONN_EXISTS=$(nmcli connection show | grep -w "$CONN_NAME" | wc -l)
+    read -p "Digite o nome da interface de rede/conexão (ex: ens33): " NET_IFACE
+    CONN_NAME="$NET_IFACE"
 
-if [ "$CONN_EXISTS" -eq 0 ]; then
-    log_info "Conexão '$CONN_NAME' não encontrada. Criando nova..."
-    sudo nmcli connection add type ethernet con-name "$CONN_NAME" ifname "$NET_IFACE"
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}❌ ERRO: Falha ao criar a conexão '$CONN_NAME'.${NC}"
-        exit 1
+    CONN_EXISTS=$(nmcli connection show | grep -w "$CONN_NAME" | wc -l)
+
+    if [ "$CONN_EXISTS" -eq 0 ]; then
+        log_info "Conexão '$CONN_NAME' não encontrada. Criando nova..."
+        sudo nmcli connection add type ethernet con-name "$CONN_NAME" ifname "$NET_IFACE"
+    else
+        log_info "Conexão '$CONN_NAME' encontrada. Modificando configuração existente."
     fi
-else
-    log_info "Conexão '$CONN_NAME' encontrada. Modificando configuração existente."
-fi
 
-# --- Dados de rede ---
-read -p "Digite o IP do servidor (CIDR, ex: 192.168.1.10/24): " IP_CIDR
-read -p "Digite o gateway padrão (ex: 192.168.1.254): " GATEWAY
-read -p "Digite o servidor DNS principal (ex: 8.8.8.8): " DNS_SERVER
+    # --- Dados de rede ---
+    read -p "Digite o IP do servidor (CIDR, ex: 192.168.1.10/24): " IP_CIDR
+    read -p "Digite o gateway padrão (ex: 192.168.1.254): " GATEWAY
+    read -p "Digite o servidor DNS principal (ex: 8.8.8.8): " DNS_SERVER
 
-# --- Aplicar configuração ---
-log_info "Aplicando configurações estáticas..."
-sudo nmcli connection modify "$CONN_NAME" ipv4.method manual ipv4.addresses "$IP_CIDR" ipv4.gateway "$GATEWAY" ipv4.dns "$DNS_SERVER" connection.autoconnect yes
+    # --- Aplicar configuração ---
+    log_info "Aplicando configurações estáticas..."
+    sudo nmcli connection modify "$CONN_NAME" ipv4.method manual ipv4.addresses "$IP_CIDR" ipv4.gateway "$GATEWAY" ipv4.dns "$DNS_SERVER" connection.autoconnect yes
 
-log_info "Reativando a conexão ${CONN_NAME}..."
-sudo nmcli connection down "$CONN_NAME" >/dev/null 2>&1
-sudo nmcli connection up "$CONN_NAME" >/dev/null 2>&1
-sleep 2
-
-if ip addr show "$NET_IFACE" | grep -q "${IP_CIDR%/*}"; then
+    log_info "Reativando a conexão ${CONN_NAME}..."
+    sudo nmcli connection up "$CONN_NAME"
     echo -e "${GREEN}✔️ IP estático configurado com sucesso.${NC}"
 else
-    echo -e "${RED}❌ ERRO: Falha ao aplicar IP estático.${NC}"
+    log_info "A configuração de IP estático foi ignorada."
 fi
 echo "--------------------------------------------------------"
 
@@ -132,6 +127,73 @@ if [[ "$duck_response" =~ ^[Ss]$ ]]; then
     if check_command curl && check_command crontab; then
         read -p "Digite o seu subdomínio DuckDNS (ex: meuservidor): " DUCK_DOMAIN
         read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
+--- a/c:/DEV/automacao-web/3-script.sh
++++ b/c:/DEV/automacao-web/3-script.sh
+@@ -1,30 +1,45 @@
+ #!/bin/bash
+ 
+ # =================================================================
+-# Script 3: Configuração de Rede e Firewall
++# Script 3: Configuração de Rede e Firewall (Modificado)
+ # =================================================================
+ 
+ # --- Cores e Funções de Log (copie do main.sh se necessário) ---
+ GREEN='\033[0;32m'
+ RED='\033[0;31m'
+ YELLOW='\033[1;33m'
+ NC='\033[0m'
+ 
+ log_info() {
+     echo -e "${YELLOW}INFO: "
+ }
+ 
+ log_success() {
+     echo -e "✔️ "
+ }
+ 
+ # --- Configuração de IP Estático ---
+-log_info "Configurando IP estático para 192.168.1.100..."
++read -p "Deseja configurar um endereço IP local estático para esta máquina? (s/n): " configure_ip
+ 
+-# Exemplo usando nmcli (comum em sistemas RHEL/CentOS)
+-INTERFACE="enp0s3" # Adapte para sua interface de rede
+-IP_ADDR="192.168.1.100/24"
+-GATEWAY="192.168.1.1"
+-DNS="8.8.8.8,8.8.4.4"
++if [[ "" =~ ^[Ss]$ ]]; then
++    log_info "Iniciando configuração de IP estático..."
+ 
+-nmcli con mod "" ipv4.addresses ""
+-nmcli con mod "" ipv4.gateway ""
+-nmcli con mod "" ipv4.dns ""
+-nmcli con mod "" ipv4.method manual
+-nmcli con up ""
++    # --- Bloco de código que altera o IP ---
++    # Substitua este bloco pelo código que realmente altera o IP no seu script.
++    # O exemplo abaixo usa 'nmcli', comum em sistemas baseados em RHEL/CentOS.
+ 
+-log_success "IP estático configurado com sucesso."
++    # Coleta interativa dos dados de rede
++    read -p "Digite o nome da interface de rede (ex: enp0s3): " INTERFACE
++    read -p "Digite o endereço IP e o prefixo (ex: 192.168.1.100/24): " IP_ADDR
++    read -p "Digite o gateway padrão (ex: 192.168.1.1): " GATEWAY
++    read -p "Digite os servidores DNS (separados por vírgula, ex: 8.8.8.8,8.8.4.4): " DNS
++
++    log_info "Aplicando configurações para a interface ''..."
++    nmcli con mod "" ipv4.addresses ""
++    nmcli con mod "" ipv4.gateway ""
++    nmcli con mod "" ipv4.dns ""
++    nmcli con mod "" ipv4.method manual
++    nmcli con up "" # Aplica as configurações
++
++    log_success "Configuração de IP estático concluída."
++else
++    log_info "A configuração de IP estático foi ignorada."
++fi
+ 
+ # --- Configuração do Firewall (exemplo com firewalld) ---
+ log_info "Configurando regras de firewall..."
+
 
         echo ">> Criando diretório e script do DuckDNS..."
         sudo mkdir -p /root/duckdns

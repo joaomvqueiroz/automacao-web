@@ -133,10 +133,20 @@ read -p "Deseja configurar um domínio com DuckDNS e SSL/TLS da Let's Encrypt ag
 
 if [[ "$CONFIGURE_SSL" =~ ^[Ss]$ ]]; then
 
+    CONFIG_FILE="automacao.conf"
+
     # --- 6.1. Solicitar dados do usuário (Lógica do script 20) ---
-    read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
-    read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
+    # Verifica se o ficheiro de configuração existe e carrega as variáveis
+    if [ -f "$CONFIG_FILE" ]; then
+        log_info "A carregar configurações de DuckDNS de $CONFIG_FILE..."
+        source "$CONFIG_FILE"
+    fi
+
+    # Se as variáveis não foram carregadas, pergunta ao utilizador
+    [ -z "$DUCK_DOMAIN" ] && read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
+    [ -z "$DUCK_TOKEN" ] && read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
     read -p "Digite um e-mail para Let’s Encrypt/Apache: " SERVER_EMAIL
+
 
     APACHE_DOMAIN="${DUCK_DOMAIN}.duckdns.org"
     DUCK_DIR="/root/duckdns"

@@ -98,7 +98,8 @@ for script_num in "${scripts_to_run[@]}"; do
             exit 1
         fi
         echo -e "${GREEN}✔️ Script ${script_file} concluído com sucesso.${NC}"
-        read -p "Pressione [Enter] para continuar para o próximo script..."
+        # A linha abaixo foi removida para permitir a execução contínua sem pausas.
+        # read -p "Pressione [Enter] para continuar para o próximo script..."
     else
         echo -e "${RED}AVISO: O ficheiro ${script_file} não foi encontrado e será ignorado.${NC}"
     fi
