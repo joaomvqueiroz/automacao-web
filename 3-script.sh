@@ -120,18 +120,27 @@ echo "--------------------------------------------------------"
 # =================================================================
 # --- 4. Configuração opcional de Redirecionamento (DuckDNS) ---
 log_info "4. Configuração do DuckDNS (Redirecionamento dinâmico opcional)"
+CONFIG_FILE="automacao.conf"
 
 read -p "Deseja configurar o DuckDNS e agendamento via cron? (s/n): " duck_response
 
 if [[ "$duck_response" =~ ^[Ss]$ ]]; then
     if check_command curl && check_command crontab; then
+        read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
         read -p "Digite o seu subdomínio DuckDNS (ex: meuservidor): " DUCK_DOMAIN
         read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
 
+        # Salva as variáveis no ficheiro de configuração para serem usadas por outros scripts
+        echo ">> Salvando informações em ${CONFIG_FILE}..."
+        sed -i '/^DUCK_DOMAIN=/d' "$CONFIG_FILE" 2>/dev/null
+        sed -i '/^DUCK_TOKEN=/d' "$CONFIG_FILE" 2>/dev/null
+        echo "DUCK_DOMAIN=\"${DUCK_DOMAIN}\"" >> "$CONFIG_FILE"
+        echo "DUCK_TOKEN=\"${DUCK_TOKEN}\"" >> "$CONFIG_FILE"
         echo ">> Criando diretório e script do DuckDNS..."
         sudo mkdir -p /root/duckdns
         sudo chmod 700 /root/duckdns
 
+        echo -e "${GREEN}✔️ Domínio e token do DuckDNS foram guardados em ${CONFIG_FILE} para uso no script 7.${NC}"
         cat <<EOF | sudo tee /root/duckdns/duck.sh >/dev/null
 #!/bin/bash
 echo url="https://www.duckdns.org/update?domains=${DUCK_DOMAIN}&token=${DUCK_TOKEN}&ip=" | curl -k -o /root/duckdns/duck.log -K -
