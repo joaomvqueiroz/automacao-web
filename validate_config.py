@@ -70,16 +70,21 @@ def read_config_file(filepath):
                 if not line or line.startswith('#') or line.startswith(';') or (line.startswith('[') and line.endswith(']')):
                     continue
                 
-                if '=' in line:
-                    # Lógica para ficheiros .ini (ex: php.ini, my.cnf)
-                    # Exemplo: key = value
-                    key, value = line.split('=', 1)
-                    values[key.strip()] = value.strip()
-                else:
-                    # Lógica para ficheiros de config Apache/outros (ex: SecRuleEngine On)
+                # Lógica unificada para tratar ambos os formatos
+                # Ex: "key = value" ou "key value"
+                separator = '=' if '=' in line else None
+                
+                if separator:
+                    parts = line.split(separator, 1)
+                else: # Fallback para separador de espaço
                     parts = line.split(None, 1)
-                    if len(parts) == 2:
-                        values[parts[0]] = parts[1]
+
+                if len(parts) < 2:
+                    continue
+
+                key = parts[0].strip()
+                value = parts[1].strip()
+                values[key] = value
     except Exception as e:
         # Apanha erros de leitura/permissão, embora o script seja executado como root.
         print(f"Erro ao ler o ficheiro {filepath}: {e}")
