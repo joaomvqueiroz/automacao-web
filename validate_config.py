@@ -20,7 +20,8 @@ EXPECTED_VALUES = {
         'modsec_engine': 'On'
     },
     'tuning_mariadb': {
-        'innodb_log_file_size': '256M',
+        # O ficheiro de configuração do MariaDB no CentOS 9 é tipicamente my.cnf ou um ficheiro em my.cnf.d/
+        'innodb_log_file_size': '256M', 
         'max_connections': '100',
         'query_cache_size': '32M'
     },
@@ -49,22 +50,40 @@ def print_status(message, success):
     return success
 
 def read_config_file(filepath):
-    """Lê um ficheiro de configuração (estilo .ini ou Apache) e retorna um dicionário."""
+    """
+    Lê um ficheiro de configuração (estilo .ini ou Apache) e retorna um dicionário.
+    CORREÇÃO: Melhor tratamento de espaços e separadores.
+    """
     values = {}
+    # Adaptação para caminhos comuns para my.cnf se /etc/my.cnf não existir
+    if 'my.cnf' in filepath and not os.path.exists(filepath):
+        filepath = "/etc/my.cnf.d/mariadb-server.cnf"
+        
     if not os.path.exists(filepath):
         return None
-    with open(filepath, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('#') or line.startswith(';'):
-                continue
-            
-            parts = line.split(None, 1) # Divide no primeiro espaço em branco
-            if len(parts) < 2:
-                continue
-            
-            key, value = parts
-            values[key] = value
+    
+    try:
+        with open(filepath, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Ignora linhas vazias, comentários e cabeçalhos de secção
+                if not line or line.startswith('#') or line.startswith(';') or (line.startswith('[') and line.endswith(']')):
+                    continue
+                
+                if '=' in line:
+                    # Lógica para ficheiros .ini (ex: php.ini, my.cnf)
+                    # Exemplo: key = value
+                    key, value = line.split('=', 1)
+                    values[key.strip()] = value.strip()
+                else:
+                    # Lógica para ficheiros de config Apache/outros (ex: SecRuleEngine On)
+                    parts = line.split(None, 1)
+                    if len(parts) == 2:
+                        values[parts[0]] = parts[1]
+    except Exception as e:
+        # Apanha erros de leitura/permissão, embora o script seja executado como root.
+        print(f"Erro ao ler o ficheiro {filepath}: {e}")
+        return None
     return values
 
 def print_header(title):
@@ -122,24 +141,34 @@ def validate_script_4_e_6():
     # Validação ModSecurity
     modsec_conf = read_config_file("/etc/httpd/conf.d/mod_security.conf")
     if modsec_conf is None:
-        return print_status("Ficheiro de configuração do ModSecurity não encontrado.", False)
-    
-    engine_status = modsec_conf.get('SecRuleEngine', 'Não Encontrado')
+        # O ficheiro pode não existir se a instalação falhou, mas se existe, deve ser validado.
+        print_status("Ficheiro de configuração do ModSecurity não encontrado.", False)
+        # Vamos assumir TRUE se o ModSecurity estiver configurado para 'Não Encontrado' na saída anterior
+        # (A saída anterior já validou que o ModSecurity estava 'On', então este bloco não deve ser executado se estiver tudo OK)
+        if modsec_conf is None:
+             engine_status = 'Não Encontrado'
+        else:
+             engine_status = 'Não Encontrado'
+             
+    engine_status = modsec_conf.get('SecRuleEngine', 'Não Encontrado') if modsec_conf else 'Não Encontrado'
     success = engine_status == EXPECTED_VALUES['seguranca']['modsec_engine']
     overall_success &= print_status(f"ModSecurity Engine está '{EXPECTED_VALUES['seguranca']['modsec_engine']}'. (Atual: {engine_status})", success)
 
     return overall_success
 
 def validate_script_8():
-    """Valida o tuning do MariaDB."""
+    """Valida o tuning do MariaDB. Adapta o caminho para my.cnf."""
     print_header("Script 8: Tuning do MariaDB")
-    config = read_config_file("/etc/my.cnf")
+    # Tentativa de ler o caminho padrão e o caminho específico do CentOS Stream 9
+    config = read_config_file("/etc/my.cnf") 
+    
     if config is None:
-        return print_status("Ficheiro de configuração /etc/my.cnf não encontrado.", False)
+         return print_status("Ficheiro de configuração do MariaDB não encontrado.", False)
 
     overall_success = True
     for key, expected_value in EXPECTED_VALUES['tuning_mariadb'].items():
         current_value = config.get(key, 'Não Encontrado')
+        # Comparação exata: o strip() dentro de read_config_file garante que não há espaços ou = no valor.
         success = current_value == expected_value
         overall_success &= print_status(f"MariaDB '{key}' = '{expected_value}'. (Atual: {current_value})", success)
         
@@ -155,6 +184,7 @@ def validate_script_9():
     overall_success = True
     for key, expected_value in EXPECTED_VALUES['tuning_php'].items():
         current_value = config.get(key, 'Não Encontrado')
+        # Comparação exata após strip()
         success = current_value == expected_value
         overall_success &= print_status(f"PHP '{key}' = '{expected_value}'. (Atual: {current_value})", success)
         
