@@ -49,17 +49,22 @@ def print_status(message, success):
     return success
 
 def read_config_file(filepath):
-    """Lê um ficheiro de configuração (estilo .ini) e retorna um dicionário."""
+    """Lê um ficheiro de configuração (estilo .ini ou Apache) e retorna um dicionário."""
     values = {}
     if not os.path.exists(filepath):
         return None
     with open(filepath, 'r') as f:
         for line in f:
             line = line.strip()
-            if line.startswith('#') or line.startswith(';') or '=' not in line:
+            if line.startswith('#') or line.startswith(';'):
                 continue
-            key, value = line.split('=', 1)
-            values[key.strip()] = value.strip()
+            
+            parts = line.split(None, 1) # Divide no primeiro espaço em branco
+            if len(parts) < 2:
+                continue
+            
+            key, value = parts
+            values[key] = value
     return values
 
 def print_header(title):
