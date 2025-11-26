@@ -127,7 +127,6 @@ read -p "Deseja configurar o DuckDNS e agendamento via cron? (s/n): " duck_respo
 if [[ "$duck_response" =~ ^[Ss]$ ]]; then
     if check_command curl && check_command crontab; then
         read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
-        read -p "Digite o seu subdomínio DuckDNS (ex: meuservidor): " DUCK_DOMAIN
         read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
 
         # Salva as variáveis no ficheiro de configuração para serem usadas por outros scripts
