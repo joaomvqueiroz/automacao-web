@@ -120,96 +120,23 @@ echo "--------------------------------------------------------"
 # =================================================================
 # --- 4. Configuração opcional de Redirecionamento (DuckDNS) ---
 log_info "4. Configuração do DuckDNS (Redirecionamento dinâmico opcional)"
+CONFIG_FILE="automacao.conf"
 
 read -p "Deseja configurar o DuckDNS e agendamento via cron? (s/n): " duck_response
 
 if [[ "$duck_response" =~ ^[Ss]$ ]]; then
     if check_command curl && check_command crontab; then
-        read -p "Digite o seu subdomínio DuckDNS (ex: meuservidor): " DUCK_DOMAIN
+        read -p "Digite o seu subdomínio DuckDNS (ex: sabormar): " DUCK_DOMAIN
         read -p "Digite o seu token DuckDNS: " DUCK_TOKEN
---- a/c:/DEV/automacao-web/3-script.sh
-+++ b/c:/DEV/automacao-web/3-script.sh
-@@ -1,30 +1,45 @@
- #!/bin/bash
- 
- # =================================================================
--# Script 3: Configuração de Rede e Firewall
-+# Script 3: Configuração de Rede e Firewall (Modificado)
- # =================================================================
- 
- # --- Cores e Funções de Log (copie do main.sh se necessário) ---
- GREEN='\033[0;32m'
- RED='\033[0;31m'
- YELLOW='\033[1;33m'
- NC='\033[0m'
- 
- log_info() {
-     echo -e "${YELLOW}INFO: "
- }
- 
- log_success() {
-     echo -e "✔️ "
- }
- 
- # --- Configuração de IP Estático ---
--log_info "Configurando IP estático para 192.168.1.100..."
-+read -p "Deseja configurar um endereço IP local estático para esta máquina? (s/n): " configure_ip
- 
--# Exemplo usando nmcli (comum em sistemas RHEL/CentOS)
--INTERFACE="enp0s3" # Adapte para sua interface de rede
--IP_ADDR="192.168.1.100/24"
--GATEWAY="192.168.1.1"
--DNS="8.8.8.8,8.8.4.4"
-+if [[ "" =~ ^[Ss]$ ]]; then
-+    log_info "Iniciando configuração de IP estático..."
- 
--nmcli con mod "" ipv4.addresses ""
--nmcli con mod "" ipv4.gateway ""
--nmcli con mod "" ipv4.dns ""
--nmcli con mod "" ipv4.method manual
--nmcli con up ""
-+    # --- Bloco de código que altera o IP ---
-+    # Substitua este bloco pelo código que realmente altera o IP no seu script.
-+    # O exemplo abaixo usa 'nmcli', comum em sistemas baseados em RHEL/CentOS.
- 
--log_success "IP estático configurado com sucesso."
-+    # Coleta interativa dos dados de rede
-+    read -p "Digite o nome da interface de rede (ex: enp0s3): " INTERFACE
-+    read -p "Digite o endereço IP e o prefixo (ex: 192.168.1.100/24): " IP_ADDR
-+    read -p "Digite o gateway padrão (ex: 192.168.1.1): " GATEWAY
-+    read -p "Digite os servidores DNS (separados por vírgula, ex: 8.8.8.8,8.8.4.4): " DNS
-+
-+    log_info "Aplicando configurações para a interface ''..."
-+    nmcli con mod "" ipv4.addresses ""
-+    nmcli con mod "" ipv4.gateway ""
-+    nmcli con mod "" ipv4.dns ""
-+    nmcli con mod "" ipv4.method manual
-+    nmcli con up "" # Aplica as configurações
-+
-+    log_success "Configuração de IP estático concluída."
-+else
-+    log_info "A configuração de IP estático foi ignorada."
-+fi
- 
- # --- Configuração do Firewall (exemplo com firewalld) ---
- log_info "Configurando regras de firewall..."
 
+        # Salva as variáveis no ficheiro de configuração para serem usadas por outros scripts
+        echo ">> Salvando informações em ${CONFIG_FILE}..."
+        sed -i '/^DUCK_DOMAIN=/d' "$CONFIG_FILE" 2>/dev/null
+        sed -i '/^DUCK_TOKEN=/d' "$CONFIG_FILE" 2>/dev/null
+        echo "DUCK_DOMAIN=\"${DUCK_DOMAIN}\"" >> "$CONFIG_FILE"
+        echo "DUCK_TOKEN=\"${DUCK_TOKEN}\"" >> "$CONFIG_FILE"
 
-        echo ">> Criando diretório e script do DuckDNS..."
-        sudo mkdir -p /root/duckdns
-        sudo chmod 700 /root/duckdns
-
-        cat <<EOF | sudo tee /root/duckdns/duck.sh >/dev/null
-#!/bin/bash
-echo url="https://www.duckdns.org/update?domains=${DUCK_DOMAIN}&token=${DUCK_TOKEN}&ip=" | curl -k -o /root/duckdns/duck.log -K -
-DATA=$(date)
-echo -e "\n\${DATA} OK" >> /root/duckdns/duck.log
-EOF
-
-        sudo chmod 700 /root/duckdns/duck.sh
-
-        (sudo crontab -l 2>/dev/null; echo "*/5 * * * * /root/duckdns/duck.sh >/dev/null 2>&1") | sudo crontab -
-        echo -e "${GREEN}✔️ DuckDNS configurado e agendado com sucesso para o domínio '${DUCK_DOMAIN}'.${NC}"
+        echo -e "${GREEN}✔️ Domínio e token do DuckDNS foram guardados em ${CONFIG_FILE} para uso no script 7.${NC}"
     else
         echo -e "${RED}❌ curl ou crontab não estão instalados.${NC}"
     fi
